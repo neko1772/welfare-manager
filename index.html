@@ -58,8 +58,8 @@ tr:hover{background:#fafbff}
 .mf{display:flex;gap:10px;justify-content:flex-end;padding:16px 24px 20px}
 /* Officer table */
 .ol{max-height:55vh;overflow-y:auto;border-radius:10px}
-.ot{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
-.ot thead{position:sticky;top:0;z-index:2}
+.ot{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;overflow:visible!important}
+.ot thead th{position:sticky;top:0;z-index:2;background:#f8f9fc}
 .ot th{background:#f8f9fc;padding:10px 10px;font-size:12px;color:var(--t2);text-align:left;border-bottom:2px solid var(--b)}
 .ot td{padding:9px 10px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
 .ot tr:hover td{background:#fafbff}
@@ -756,9 +756,9 @@ function render(){
         + ((g.link_params||'')?'<button class="btn-sm" onclick="copyText(\''+esc(g.link_params)+'\')">🔗参数</button>':'')
         + (fullLink?'<button class="btn-sm pri" onclick="copyText(\''+esc(fullLink)+'\')">🔗完整</button>':'')
         + (g.qr_url?'<button class="btn-sm" onclick="copyQrAction(\''+esc(g.qr_url)+'\')">🖼二维码</button>':'')
-        + '<button class="btn-sm" onclick="copyFullText('+i+')">📄全文</button>'
-        + '<button class="btn-sm" onclick="openEditModal(getData()['+i+'])">✏编辑</button>'
-        + '<button class="btn-sm dgr" onclick="deleteGame('+i+')">🗑删除</button>'
+        + '<button class="btn-sm" onclick="copyFullText(\''+g.id+'\')">📄全文</button>'
+        + '<button class="btn-sm" onclick="openEditModal(getGameById(\''+g.id+'\'))">✏编辑</button>'
+        + '<button class="btn-sm dgr" onclick="deleteGame(\''+g.id+'\')">🗑删除</button>'
         + '</div>'
       + '</td>'
       + '</tr>';
@@ -766,8 +766,13 @@ function render(){
   tbody.innerHTML = html;
 }
 
-function copyFullText(idx){
-  var g = getData()[idx];
+function getGameById(id){
+  var games = getData();
+  for(var i=0;i<games.length;i++){ if(games[i].id===id) return games[i]; }
+  return null;
+}
+function copyFullText(id){
+  var g = getGameById(id); if(!g) return;
   var offs = getOfficers();
   var sel = (g.officer_ids||[]).map(function(oid){ return offs.find(function(x){return x.id===oid}) }).filter(Boolean);
   var lines = [];
@@ -797,10 +802,12 @@ function copyQrAction(url){
   }
 }
 
-function deleteGame(idx){
+function deleteGame(id){
   if(!confirm('确认删除这条记录？')) return;
   requireAdmin(function(){
     var games = getData();
+    var idx = games.findIndex(function(g){return g.id===id});
+    if(idx<0) return;
     games.splice(idx,1);
     saveData(games);
     toast('已删除','ok');
