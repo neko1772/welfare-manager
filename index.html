@@ -58,8 +58,9 @@ tr:hover{background:#fafbff}
 .mf{display:flex;gap:10px;justify-content:flex-end;padding:16px 24px 20px}
 /* Officer table */
 .ol{max-height:55vh;overflow-y:auto;border-radius:10px}
-.ot{width:100%;border-collapse:collapse;font-size:13px}
-.ot th{background:#f8f9fc;padding:10px 10px;font-size:12px;color:var(--t2);text-align:left;border-bottom:2px solid var(--b);position:sticky;top:0;z-index:1}
+.ot{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+.ot thead{position:sticky;top:0;z-index:2}
+.ot th{background:#f8f9fc;padding:10px 10px;font-size:12px;color:var(--t2);text-align:left;border-bottom:2px solid var(--b)}
 .ot td{padding:9px 10px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
 .ot tr:hover td{background:#fafbff}
 .ot .act{white-space:nowrap;text-align:center}
@@ -280,6 +281,22 @@ A002	小礼	和平福利官	139xxx	wx456	李四	是	iPhone 14'></textarea>
 </div>
 </div>
 
+<!-- 删除验证弹窗 -->
+<div class="mo" id="deleteVerifyModal">
+<div class="md" style="max-width:380px">
+  <div class="hd"><span>🔒 验证管理员身份</span><span class="x" onclick="closeDeleteVerify()">×</span></div>
+  <div class="mb">
+    <p style="font-size:13px;color:var(--t2);margin-bottom:12px">删除数据需要验证管理员密码</p>
+    <div class="fg"><label>管理员密码</label><input type="password" id="deleteAdminPwd" placeholder="请输入管理员密码" autocomplete="off"></div>
+    <div id="deleteAdminPwdErr" style="color:#e74c3c;font-size:13px;margin-top:6px;display:none"></div>
+  </div>
+  <div class="mf">
+    <button class="btn btn-o" onclick="closeDeleteVerify()">取消</button>
+    <button class="btn btn-p" id="btnConfirmDeleteVerify">确认删除</button>
+  </div>
+</div>
+</div>
+
 <!-- 福利官详情弹窗 -->
 <div class="pop" id="officerPop"></div>
 
@@ -328,6 +345,8 @@ var DATA_KEY = 'gw_data';
 var OFFICER_KEY = 'gw_officers';
 var SESSION_KEY = 'gw_session';
 var SESSION_HOURS = 4;
+var ADMIN_VERIFY_KEY = 'gw_admin_verified';
+var ADMIN_VERIFY_MINUTES = 5;
 
 /* ════════════════════ HASH ════════════════════ */
 function simpleHash(str){
@@ -468,6 +487,48 @@ $('btnSavePwd').addEventListener('click', savePwdChange);
 $('adminPwdInput').addEventListener('keydown', function(e){ if(e.key==='Enter') verifyAdminPwd() });
 $('confirmAccessPwd').addEventListener('keydown', function(e){ if(e.key==='Enter') savePwdChange() });
 $('btnForgotPwd').addEventListener('click', function(e){ e.preventDefault(); openPwdModal() });
+
+/* ════════════════════ DELETE ADMIN VERIFY ════════════════════ */
+var pendingDeleteAction = null;
+
+function isAdminVerified(){
+  var ts = localStorage.getItem(ADMIN_VERIFY_KEY);
+  if(!ts) return false;
+  return Date.now() - parseInt(ts) < ADMIN_VERIFY_MINUTES * 60 * 1000;
+}
+function setAdminVerified(){
+  localStorage.setItem(ADMIN_VERIFY_KEY, Date.now().toString());
+}
+function clearAdminVerified(){
+  localStorage.removeItem(ADMIN_VERIFY_KEY);
+}
+
+function requireAdmin(callback){
+  if(isAdminVerified()){ callback(); return; }
+  pendingDeleteAction = callback;
+  $('deleteAdminPwd').value = '';
+  $('deleteAdminPwdErr').style.display = 'none';
+  $('deleteVerifyModal').classList.add('active');
+  setTimeout(function(){ $('deleteAdminPwd').focus() }, 100);
+}
+function closeDeleteVerify(){
+  $('deleteVerifyModal').classList.remove('active');
+  pendingDeleteAction = null;
+}
+function confirmDeleteVerify(){
+  var input = $('deleteAdminPwd').value;
+  var stored = localStorage.getItem(ADMIN_KEY);
+  if(!input){$('deleteAdminPwdErr').textContent='请输入管理员密码';$('deleteAdminPwdErr').style.display='block';return}
+  if(simpleHash(input)!==stored){
+    $('deleteAdminPwdErr').textContent='管理员密码错误';$('deleteAdminPwdErr').style.display='block';
+    return;
+  }
+  setAdminVerified();
+  $('deleteVerifyModal').classList.remove('active');
+  if(pendingDeleteAction){ pendingDeleteAction(); pendingDeleteAction = null; }
+}
+$('btnConfirmDeleteVerify').addEventListener('click', confirmDeleteVerify);
+$('deleteAdminPwd').addEventListener('keydown', function(e){ if(e.key==='Enter') confirmDeleteVerify() });
 
 /* ════════════════════ SPACING ════════════════════ */
 var curSp = '12px';
@@ -733,11 +794,13 @@ function copyQrAction(url){
 
 function deleteGame(idx){
   if(!confirm('确认删除这条记录？')) return;
-  var games = getData();
-  games.splice(idx,1);
-  saveData(games);
-  toast('已删除','ok');
-  render();
+  requireAdmin(function(){
+    var games = getData();
+    games.splice(idx,1);
+    saveData(games);
+    toast('已删除','ok');
+    render();
+  });
 }
 
 /* ════════════════════ QR MODAL ════════════════════ */
@@ -811,11 +874,13 @@ function editOfficer(oid){
 
 function deleteOfficerLib(oid){
   if(!confirm('确认删除该福利官？')) return;
-  var offs=getOfficers();
-  offs = offs.filter(function(o){return o.id!==oid});
-  saveOfficers(offs);
-  renderOfficerLib();
-  toast('已删除','ok');
+  requireAdmin(function(){
+    var offs=getOfficers();
+    offs = offs.filter(function(o){return o.id!==oid});
+    saveOfficers(offs);
+    renderOfficerLib();
+    toast('已删除','ok');
+  });
 }
 
 $('btnOfficerLib').addEventListener('click', openOfficerLib);
@@ -1088,7 +1153,7 @@ $('btnAdd').addEventListener('click', function(){openEditModal(null)});
 /* ════════════════════ ESC CLOSE ════════════════════ */
 document.addEventListener('keydown', function(e){
   if(e.key==='Escape'){
-    closeEdit(); closePwdModal(); closeImport(); closeOfficerLib(); closeOfficerEdit(); closeQr();
+    closeEdit(); closePwdModal(); closeImport(); closeOfficerLib(); closeOfficerEdit(); closeQr(); closeDeleteVerify();
   }
 });
 
