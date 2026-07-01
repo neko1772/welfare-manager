@@ -56,10 +56,15 @@ tr:hover{background:#fafbff}
 .qz{width:100%;min-height:100px;padding:10px;border:2px dashed #d0d5dd;border-radius:10px;text-align:center;cursor:pointer;color:var(--t3);font-size:13px;margin-bottom:10px}
 .qz:hover{border-color:var(--p);color:var(--p)}
 .mf{display:flex;gap:10px;justify-content:flex-end;padding:16px 24px 20px}
-/* Officer modal */
-.ol{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;max-height:50vh;overflow-y:auto;padding:4px 0}
-.oc{background:#f8f9fc;border-radius:12px;padding:14px 16px;cursor:pointer;transition:.2s;border:2px solid transparent}.oc:hover{border-color:var(--p)}
-.oc .on{font-weight:700;font-size:14px;color:var(--t)}.oc .onn{font-size:12px;color:var(--t3);margin-top:2px}
+/* Officer table */
+.ol{max-height:55vh;overflow-y:auto;border-radius:10px}
+.ot{width:100%;border-collapse:collapse;font-size:13px}
+.ot th{background:#f8f9fc;padding:10px 10px;font-size:12px;color:var(--t2);text-align:left;border-bottom:2px solid var(--b);position:sticky;top:0;z-index:1}
+.ot td{padding:9px 10px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
+.ot tr:hover td{background:#fafbff}
+.ot .act{white-space:nowrap;text-align:center}
+.ot .del{color:var(--t3);cursor:pointer;font-size:14px;transition:.2s}
+.ot .del:hover{color:var(--d)}
 /* Pop */
 .pop{display:none;position:fixed;z-index:200;background:var(--card);border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.18);padding:18px 22px;min-width:220px;max-width:340px}
 .pop.active{display:block}.pop .hd{font-size:16px;font-weight:700;margin-bottom:12px}.pop .row{display:flex;gap:8px;margin-bottom:8px;font-size:13px}.pop .lb{color:var(--t3);min-width:70px}
@@ -754,18 +759,26 @@ function closeOfficerLib(){ $('officerLibModal').classList.remove('active') }
 function renderOfficerLib(){
   var offs = getOfficers();
   var html = '';
-  if(offs.length===0) html='<div style="padding:20px;color:var(--t3)">暂无福利官，点击「＋ 添加福利官」</div>';
+  if(offs.length===0) html='<div style="padding:20px;color:var(--t3);text-align:center">暂无福利官，点击「＋ 添加福利官」</div>';
   else {
+    html = '<table class="ot"><thead><tr>'
+      +'<th>序列</th><th>昵称</th><th>名称</th><th>手机号</th><th>微信</th><th>实名</th><th>七鱼</th><th>设备</th><th style="width:40px"></th>'
+      +'</tr></thead><tbody>';
     for(var i=0;i<offs.length;i++){
       var o=offs[i];
-      html += '<div class="oc" onclick="editOfficer(\''+o.id+'\')">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center">'
-        + '<span class="on">'+(o.seq?'['+esc(o.seq)+'] ':'')+esc(o.nick)+'</span>'
-        + '<span style="color:var(--t3);font-size:12px;cursor:pointer" onclick="event.stopPropagation();deleteOfficerLib(\''+o.id+'\')">🗑</span>'
-        + '</div>'
-        + (o.name?'<div class="onn">'+(o.seq||'')+' '+esc(o.name)+'</div>':'')
-        + '</div>';
+      html += '<tr onclick="editOfficer(\''+o.id+'\')" style="cursor:pointer">'
+        +'<td>'+(o.seq?esc(o.seq):'-')+'</td>'
+        +'<td style="font-weight:600">'+esc(o.nick)+'</td>'
+        +'<td>'+esc(o.name||'-')+'</td>'
+        +'<td>'+esc(o.phone||'-')+'</td>'
+        +'<td>'+esc(o.wechat||'-')+'</td>'
+        +'<td>'+esc(o.realName||'-')+'</td>'
+        +'<td>'+esc(o.qiyu||'否')+'</td>'
+        +'<td>'+esc(o.device||'-')+'</td>'
+        +'<td class="act"><span class="del" onclick="event.stopPropagation();deleteOfficerLib(\''+o.id+'\')" title="删除">×</span></td>'
+        +'</tr>';
     }
+    html += '</tbody></table>';
   }
   $('officerList').innerHTML = html;
 }
