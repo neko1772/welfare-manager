@@ -148,7 +148,7 @@ tr:hover{background:#fafbff}
       <div style="position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #e0e0e0;border-radius:10px;margin-top:4px;max-height:180px;overflow-y:auto;display:none;z-index:10" id="dd"></div>
     </div>
     <label>二维码图片</label>
-    <div class="qz" id="qrZone">📷 点击上传二维码<br><small>支持 jpg/png/gif</small></div>
+    <div class="qz" id="qrZone">📷 点击上传二维码 或 Ctrl+V 粘贴<br><small>支持 jpg/png/gif</small></div>
     <input type="file" id="qrFileInput" accept="image/*" style="display:none">
     <input type="text" id="editQrUrl" placeholder="或粘贴图片链接" style="margin-bottom:10px" oninput="updateQrPreview(this.value)">
     <div id="qrPreviewArea" style="display:none;margin-bottom:10px"><img id="qp" style="max-width:120px;max-height:120px;border-radius:8px"></div>
@@ -206,7 +206,7 @@ tr:hover{background:#fafbff}
   <div class="hd"><span>📂 导入数据</span><span class="x" onclick="closeImport()">×</span></div>
   <div class="mb">
     <p style="font-size:13px;color:var(--t2);margin-bottom:10px">支持 JSON 数组 或 CSV 格式（可直接从 Excel 复制粘贴）。</p>
-    <p style="font-size:12px;color:var(--t3);margin-bottom:8px">字段：game_name | officer_nicks | qr_url | customer_link | link_params | notes</p>
+    <p style="font-size:12px;color:var(--t3);margin-bottom:8px">字段：game_name | officer_nicks | qr_url(可空) | customer_link | link_params | notes</p>
     <textarea id="importText" style="width:100%;min-height:120px;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:13px;outline:none;font-family:inherit;resize:vertical;margin-bottom:12px" placeholder='王者荣耀,小福,https://qr.png,https://game.com,?chan=001,备注
 和平精英,小礼,https://qr.png,https://game.com,?chan=002,'></textarea>
     <div style="display:flex;gap:10px">
@@ -579,6 +579,29 @@ $('qrFileInput').addEventListener('change', function(e){
   reader.readAsDataURL(file);
 });
 
+// Ctrl+V paste image anywhere in edit modal
+document.addEventListener('paste', function(e){
+  if(!$('editModal').classList.contains('active')) return;
+  var items = e.clipboardData && e.clipboardData.items;
+  if(!items) return;
+  for(var i=0;i<items.length;i++){
+    if(items[i].type.indexOf('image')===0){
+      e.preventDefault();
+      var blob = items[i].getAsFile();
+      var reader = new FileReader();
+      reader.onload = function(ev){
+        $('qp').src = ev.target.result;
+        $('qrPreviewArea').style.display = 'block';
+        $('qrZone').style.display = 'none';
+        $('editQrUrl').value = ev.target.result;
+        toast('已粘贴二维码图片','ok');
+      };
+      reader.readAsDataURL(blob);
+      return;
+    }
+  }
+});
+
 $('btnSaveEdit').addEventListener('click', function(){
   var gameName=$('editGameName').value.trim();
   if(!gameName){toast('请输入游戏名称','er');return}
@@ -948,9 +971,9 @@ $('btnExport').addEventListener('click', function(){
 /* ════════════════════ IMPORT TEMPLATE ════════════════════ */
 $('btnDownloadTemplate').addEventListener('click', function(){
   // CSV 模板，Excel 可直接打开
-  var header = 'game_name,officer_nicks,qr_url,customer_link,link_params,notes';
+  var header = 'game_name,officer_nicks,qr_url(可空),customer_link,link_params,notes';
   var row1 = '王者荣耀,小福,https://example.com/qr1.png,https://game.qq.com/wzry,?channel=test001,测试数据';
-  var row2 = '和平精英,小礼,https://example.com/qr2.png,https://gp.qq.com,?channel=test002,';
+  var row2 = '和平精英,小礼,,https://gp.qq.com,?channel=test002,';
   var csv = '\uFEFF' + header + '\n' + row1 + '\n' + row2 + '\n';
   var blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
   var a = document.createElement('a');
