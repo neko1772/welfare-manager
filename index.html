@@ -663,7 +663,14 @@ function render(){
     var g = games[i];
     var sel = (g.officer_ids||[]).map(function(oid){ return offs.find(function(x){return x.id===oid}) }).filter(Boolean);
     var nickTags = sel.map(function(o){ return '<span class="tag">'+esc(o.nick)+'</span>' }).join('');
-    var nameHtml = sel.map(function(o){
+    var nameHtml = '';
+    var seenNames = {};
+    var uniqueNames = [];
+    for(var j=0;j<sel.length;j++){
+      var nm = sel[j].name || '—';
+      if(!seenNames[nm]){ seenNames[nm]=true; uniqueNames.push(sel[j]); }
+    }
+    nameHtml = uniqueNames.map(function(o){
       return '<div style="cursor:pointer;color:var(--p);font-size:13px" onclick="showOfficerDetail(\''+o.id+'\')">'+esc(o.name||'—')+'</div>';
     }).join('');
     var qrImg = g.qr_url ? '<img src="'+esc(g.qr_url)+'" style="width:48px;height:48px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="showQr(\''+esc(g.qr_url)+'\')">' : '—';
