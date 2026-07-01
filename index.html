@@ -66,9 +66,14 @@ tr:hover{background:#fafbff}
 .ot .act{white-space:nowrap;text-align:center}
 .ot .del{color:var(--t3);cursor:pointer;font-size:14px;transition:.2s}
 .ot .del:hover{color:var(--d)}
+.ot th{position:relative;user-select:none}
+.ot th .resize-handle{position:absolute;right:0;top:0;bottom:0;width:6px;cursor:col-resize;z-index:3}
+.ot th .resize-handle:hover,.ot th .resize-handle.active{background:var(--p)}
 /* Pop */
 .pop{display:none;position:fixed;z-index:200;background:var(--card);border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.18);padding:18px 22px;min-width:220px;max-width:340px}
-.pop.active{display:block}.pop .hd{font-size:16px;font-weight:700;margin-bottom:12px}.pop .row{display:flex;gap:8px;margin-bottom:8px;font-size:13px}.pop .lb{color:var(--t3);min-width:70px}
+.pop.active{display:block}.pop .hd{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}.pop .hd .px{font-size:20px;cursor:pointer;color:var(--t3);line-height:1}.pop .row{display:flex;gap:8px;margin-bottom:8px;font-size:13px}.pop .lb{color:var(--t3);min-width:70px;user-select:none}
+/* Selectable text */
+.pop .row span:last-child{user-select:text;cursor:text}
 /* Toast */
 .tc{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
 .ts{padding:10px 22px;border-radius:10px;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.15);pointer-events:auto;animation:fadeIn .3s}
@@ -723,7 +728,7 @@ function render(){
   for(var i=0;i<games.length;i++){
     var g = games[i];
     var sel = (g.officer_ids||[]).map(function(oid){ return offs.find(function(x){return x.id===oid}) }).filter(Boolean);
-    var nickTags = sel.map(function(o){ return '<span class="tag">'+esc(o.nick)+'</span>' }).join('');
+    var nickTags = sel.map(function(o){ return '<span class="tag" style="cursor:pointer" onclick="event.stopPropagation();showOfficerDetail(\''+o.id+'\')">'+esc(o.nick)+'</span>' }).join('');
     var nameHtml = '';
     var seenNames = {};
     var uniqueNames = [];
@@ -832,8 +837,8 @@ function renderOfficerLib(){
   var html = '';
   if(offs.length===0) html='<div style="padding:20px;color:var(--t3);text-align:center">暂无福利官，点击「＋ 添加福利官」</div>';
   else {
-    html = '<table class="ot"><thead><tr>'
-      +'<th>序列</th><th>昵称</th><th>名称</th><th>手机号</th><th>微信</th><th>实名</th><th>七鱼</th><th>设备</th><th style="width:40px"></th>'
+    html = '<table class="ot" id="officerTable"><thead><tr>'
+      +'<th style="min-width:60px">序列<div class="resize-handle"></div></th><th style="min-width:60px">昵称<div class="resize-handle"></div></th><th style="min-width:80px">名称<div class="resize-handle"></div></th><th style="min-width:80px">手机号<div class="resize-handle"></div></th><th style="min-width:80px">微信<div class="resize-handle"></div></th><th style="min-width:60px">实名<div class="resize-handle"></div></th><th style="min-width:60px">七鱼<div class="resize-handle"></div></th><th style="min-width:80px">设备<div class="resize-handle"></div></th><th style="width:40px;min-width:40px"></th>'
       +'</tr></thead><tbody>';
     for(var i=0;i<offs.length;i++){
       var o=offs[i];
@@ -852,6 +857,42 @@ function renderOfficerLib(){
     html += '</tbody></table>';
   }
   $('officerList').innerHTML = html;
+  // bind resize handles after DOM update
+  initColumnResize();
+}
+
+/* ════════════════════ COLUMN RESIZE ════════════════════ */
+function initColumnResize(){
+  var table = $('officerTable');
+  if(!table) return;
+  var handles = table.querySelectorAll('.resize-handle');
+  var startX, startWidth, targetCol;
+  handles.forEach(function(handle){
+    handle.addEventListener('mousedown', function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      targetCol = handle.parentElement;
+      startX = e.pageX;
+      startWidth = targetCol.offsetWidth;
+      handle.classList.add('active');
+      document.addEventListener('mousemove', onResizeMove);
+      document.addEventListener('mouseup', onResizeUp);
+    });
+  });
+}
+function onResizeMove(e){
+  if(!targetCol) return;
+  var newWidth = Math.max(40, startWidth + (e.pageX - startX));
+  targetCol.style.width = newWidth + 'px';
+  targetCol.style.minWidth = newWidth + 'px';
+}
+function onResizeUp(){
+  document.removeEventListener('mousemove', onResizeMove);
+  document.removeEventListener('mouseup', onResizeUp);
+  if(targetCol){
+    document.querySelectorAll('.resize-handle.active').forEach(function(h){h.classList.remove('active')});
+    targetCol = null;
+  }
 }
 
 function editOfficer(oid){
@@ -933,7 +974,15 @@ function showOfficerDetail(oid){
   for(var i=0;i<offs.length;i++){if(offs[i].id===oid){o=offs[i];break}}
   if(!o) return;
   var pop=$('officerPop');
-  pop.innerHTML='<div class="hd">'+esc((o.seq?'['+o.seq+'] ':'')+o.nick)+'</div>'
+
+  // toggle: if already showing same officer, close it
+  if(pop.classList.contains('active') && pop._oid===oid){
+    hideOfficerPop();
+    return;
+  }
+
+  pop._oid = oid;
+  pop.innerHTML='<div class="hd"><span>'+esc((o.seq?'['+o.seq+'] ':'')+o.nick)+'</span><span class="px" onclick="hideOfficerPop();event.stopPropagation()">×</span></div>'
     + (o.seq?'<div class="row"><span class="lb">项目序列：</span><span>'+esc(o.seq)+'</span></div>':'')
     + '<div class="row"><span class="lb">昵称：</span><span>'+esc(o.nick)+'</span></div>'
     + (o.name?'<div class="row"><span class="lb">名称：</span><span>'+esc(o.name)+'</span></div>':'')
@@ -945,16 +994,26 @@ function showOfficerDetail(oid){
   pop.style.display='block';
   pop.classList.add('active');
   // Position near click
-  var rect = event.target ? event.target.getBoundingClientRect() : {left:100,top:100};
-  pop.style.left = Math.min(rect.left, window.innerWidth-300)+'px';
-  pop.style.top = Math.min(rect.bottom+8, window.innerHeight-200)+'px';
-  setTimeout(function(){document.addEventListener('click', hideOfficerPopOnce)},100);
+  var rect = event && event.target ? event.target.getBoundingClientRect() : {left:100,top:100};
+  pop.style.left = Math.min(rect.left, window.innerWidth-350)+'px';
+  pop.style.top = Math.min(rect.bottom+8, window.innerHeight-240)+'px';
+
+  // Close on click outside (deferred to avoid immediate close from the click that opened it)
+  setTimeout(function(){
+    document.addEventListener('click', onDocClickHidePop);
+  }, 50);
 }
-function hideOfficerPopOnce(){
+function onDocClickHidePop(e){
+  var pop = $('officerPop');
+  if(!pop.contains(e.target)){
+    hideOfficerPop();
+  }
+}
+function hideOfficerPop(){
   var pop=$('officerPop');
   pop.style.display='none';
   pop.classList.remove('active');
-  document.removeEventListener('click', hideOfficerPopOnce);
+  document.removeEventListener('click', onDocClickHidePop);
 }
 
 /* ════════════════════ IMPORT / EXPORT ════════════════════ */
