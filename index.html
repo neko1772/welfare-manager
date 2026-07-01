@@ -756,6 +756,7 @@ function openOfficerLib(){
   $('officerLibModal').classList.add('active');
 }
 function closeOfficerLib(){ $('officerLibModal').classList.remove('active') }
+function closeOfficerEdit(){ $('officerEditModal').classList.remove('active') }
 function renderOfficerLib(){
   var offs = getOfficers();
   var html = '';
@@ -773,7 +774,7 @@ function renderOfficerLib(){
         +'<td>'+esc(o.phone||'-')+'</td>'
         +'<td>'+esc(o.wechat||'-')+'</td>'
         +'<td>'+esc(o.realName||'-')+'</td>'
-        +'<td>'+esc(o.qiyu||'否')+'</td>'
+        +'<td>'+(o.qiyu==='否'?'<span style="color:var(--d);font-weight:600">否</span>':esc(o.qiyu||'否'))+'</td>'
         +'<td>'+esc(o.device||'-')+'</td>'
         +'<td class="act"><span class="del" onclick="event.stopPropagation();deleteOfficerLib(\''+o.id+'\')" title="删除">×</span></td>'
         +'</tr>';
