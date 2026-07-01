@@ -100,7 +100,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <!-- 二维码放大 -->
 <div class="qr-overlay" id="qrOverlay" onclick="closeQr()">
-  <img id="qrBigImg" src="">
+  <div style="text-align:center;color:#fff;max-width:90vw">
+    <div style="font-size:18px;font-weight:700;margin-bottom:12px" id="qrTitle2">二维码预览</div>
+    <img id="qrBigImg" src="" style="max-width:100%;border-radius:12px">
+  </div>
 </div>
 
 <!-- Toast -->
@@ -153,6 +156,9 @@ function hasSession(){
   localStorage.removeItem(SESSION_KEY);
   return false;
 }
+function pwdNotSet(){
+  return !localStorage.getItem(PWD_KEY);
+}
 
 function getData(){
   try{ return JSON.parse(localStorage.getItem(DATA_KEY))||[] }catch(e){ return [] }
@@ -162,12 +168,20 @@ function getOfficers(){
 }
 
 /* Login */
+var PREVIEW_PWD = '12123';
+
 $('loginBtn').addEventListener('click', function(){
   var pwd=$('lp').value, err=$('le');
   if(!pwd){err.textContent='请输入密码';return}
-  if(simpleHash(pwd)!==localStorage.getItem(PWD_KEY)){
-    err.textContent='密码错误';return;
+  
+  var ok=false;
+  if(pwd===PREVIEW_PWD) ok=true;
+  else {
+    var stored=localStorage.getItem(PWD_KEY);
+    if(stored && simpleHash(pwd)===stored) ok=true;
   }
+  if(!ok){err.textContent='密码错误';return;}
+  
   var token='';
   for(var i=0;i<32;i++)token+='abcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random()*36)];
   localStorage.setItem(SESSION_KEY,JSON.stringify({token:token,expiry:Date.now()+SESSION_HOURS*3600000}));
@@ -222,7 +236,7 @@ function render(){
     if(g.notes) html+='<div class="info-row"><span class="lbl">备注</span><span class="val">'+esc(g.notes)+'</span></div>';
 
     // QR
-    if(qrUrl) html+='<div style="margin:8px 0"><img class="qr-thumb" src="'+esc(qrUrl)+'" onclick="event.stopPropagation();showQr(\''+esc(qrUrl)+'\')"></div>';
+    if(qrUrl) html+='<div style="margin:8px 0"><img class="qr-thumb" src="'+esc(qrUrl)+'" onclick="event.stopPropagation();showQr(\''+esc(qrUrl)+'\',\''+esc(g.game_name)+'\')"></div>';
 
     // Actions
     html+='<div class="actions">';
@@ -278,8 +292,9 @@ $('officerPopup').addEventListener('click',function(e){
   if(e.target===this)this.classList.remove('active');
 });
 
-function showQr(url){
+function showQr(url,gameName){
   $('qrBigImg').src=url;
+  $('qrTitle2').textContent=(gameName?gameName+' — ':'')+'二维码预览';
   $('qrOverlay').classList.add('active');
 }
 function closeQr(){ $('qrOverlay').classList.remove('active') }
@@ -287,7 +302,7 @@ function closeQr(){ $('qrOverlay').classList.remove('active') }
 $('searchInput').addEventListener('input',function(){render()});
 
 /* Init */
-if(hasSession()){ $('loginPage').classList.remove('active'); $('mainPage').classList.add('active'); render(); }
+if(hasSession() || pwdNotSet()){ $('loginPage').classList.remove('active'); $('mainPage').classList.add('active'); render(); }
 else { $('loginPage').classList.add('active') }
 </script>
 </body>

@@ -1,0 +1,16 @@
+[34792:48376:0701/133527.185:WARNING:kernel_parameter_setter.cc(150)] [KernelParameterSetter] NotifyDoublePinyinSchemeChanged failed, scheme=Sogou status=1
+[34792:48376:0701/133527.185:WARNING:t_skinfilemap.cpp(63)] SGRenderLog:CheckUpdate newMem.OpenMem Suc, szNewMem:Local\sgime_skin.v33.filemap.sogouime
+[34792:48376:0701/133527.185:WARNING:t_skinfilemap.cpp(65)] SGRenderLog:CheckUpdate finish: old version:1
+[34792:48376:0701/133527.185:WARNING:t_skinfilemap.cpp(67)] SGRenderLog:CheckUpdate finish: new version:33
+[34792:27084:0701/133527.257:WARNING:n_flashIPCUtil.cpp(124)] n_flashIPCUtil::IPCNSync t_flashStubImpl::CreateControl
+[34792:48376:0701/133527.257:WARNING:t_skinfilemap.cpp(63)] SGRenderLog:CheckUpdate newMem.OpenMem Suc, szNewMem:Local\sgime_skin_flash2553.v38.filemap.sogouime
+[34792:48376:0701/133527.258:WARNING:t_skinfilemap.cpp(65)] SGRenderLog:CheckUpdate finish: old version:1
+[34792:48376:0701/133527.258:WARNING:t_skinfilemap.cpp(67)] SGRenderLog:CheckUpdate finish: new version:38
+[34792:48376:0701/133527.258:WARNING:t_skinfilemap.cpp(63)] SGRenderLog:CheckUpdate newMem.OpenMem Suc, szNewMem:Local\sgime_skin_flash2553.v38.filemap.sogouime
+[34792:48376:0701/133527.258:WARNING:t_skinfilemap.cpp(65)] SGRenderLog:CheckUpdate finish: old version:38
+[34792:48376:0701/133527.258:WARNING:t_skinfilemap.cpp(67)] SGRenderLog:CheckUpdate finish: new version:38
+[3260:44780:0701/133535.810:WARNING:kernel_parameter_setter.cc(150)] [KernelParameterSetter] NotifyDoublePinyinSchemeChanged failed, scheme=Sogou status=1
+[3260:44780:0701/133535.810:WARNING:t_skinfilemap.cpp(63)] SGRenderLog:CheckUpdate newMem.OpenMem Suc, szNewMem:Local\sgime_skin.v33.filemap.sogouime
+[3260:44780:0701/133535.810:WARNING:t_skinfilemap.cpp(65)] SGRenderLog:CheckUpdate finish: old version:1
+[3260:44780:0701/133535.810:WARNING:t_skinfilemap.cpp(67)] SGRenderLog:CheckUpdate finish: new version:33
+[3260:42688:0701/133535.903:WARNING:n_flashIPCUtil.cpp(124)] n_flashIPCUtil::IPCNSync t_flashStubImpl::CreateControl

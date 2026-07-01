@@ -308,7 +308,7 @@ A002	小礼	和平福利官	139xxx	wx456	李四	是	iPhone 14'></textarea>
 <!-- QR 查看弹窗 -->
 <div class="mo" id="qrModal">
 <div class="md" style="max-width:420px;text-align:center">
-  <div class="hd"><span>二维码预览</span><span class="x" onclick="closeQr()">×</span></div>
+  <div class="hd"><span id="qrTitle">二维码预览</span><span class="x" onclick="closeQr()">×</span></div>
   <div style="padding:20px"><img id="qrBig" style="max-width:100%;border-radius:10px"></div>
   <div class="mf">
     <button class="btn btn-p" onclick="copyQrImage()">📋 复制图片</button>
@@ -739,7 +739,7 @@ function render(){
     nameHtml = uniqueNames.map(function(o){
       return '<div style="cursor:pointer;color:var(--p);font-size:13px" onclick="showOfficerDetail(\''+o.id+'\')">'+esc(o.name||'—')+'</div>';
     }).join('');
-    var qrImg = g.qr_url ? '<img src="'+esc(g.qr_url)+'" style="width:48px;height:48px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="showQr(\''+esc(g.qr_url)+'\')">' : '—';
+    var qrImg = g.qr_url ? '<img src="'+esc(g.qr_url)+'" style="width:48px;height:48px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="showQr(\''+esc(g.qr_url)+'\',\''+esc(g.game_name)+'\')">' : '—';
     var link = g.customer_link||'';
     var fullLink = link+(g.link_params||'');
     html += '<tr>'
@@ -816,8 +816,9 @@ function deleteGame(id){
 }
 
 /* ════════════════════ QR MODAL ════════════════════ */
-function showQr(url){
+function showQr(url,gameName){
   $('qrBig').src=url;
+  $('qrTitle').textContent=(gameName?gameName+' — ':'')+'二维码预览';
   $('qrModal').classList.add('active');
 }
 function closeQr(){ $('qrModal').classList.remove('active') }
