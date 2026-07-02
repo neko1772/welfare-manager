@@ -2,15 +2,14 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>福利官预览</title>
 <style>
+/* ═══════════ 和 PC 端完全相同的变量与基础样式 ═══════════ */
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--sp:12px;--bg:#f5f7fb;--card:#fff;--b:#e5e7eb;--t:#222;--t2:#555;--t3:#999;--p:#6366f1;--p2:#818cf8;--s:#16a34a;--d:#e53935;--w:90vw}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--t);min-height:100vh;width:100%}
-#mainPage{width:100%}
-.tb{padding:12px 16px}.wt{padding:0 16px 16px}
-/* Login */
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--t);min-height:100vh}
+/* Login — same as PC */
 .pg{display:none;justify-content:center;align-items:center;min-height:100vh}.pg.active{display:flex}
 .login-box{background:var(--card);border-radius:18px;padding:40px 36px;box-shadow:0 8px 40px rgba(0,0,0,.1);width:360px;text-align:center}
 .login-box h1{font-size:24px;margin-bottom:6px}.login-box .sub{color:var(--t3);font-size:14px;margin-bottom:24px}
@@ -20,7 +19,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
 .btn{padding:11px 22px;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:.2s}
 .btn-p{background:var(--p);color:#fff}.btn-p:hover{background:var(--p2)}
 .btn-blk{width:100%}.err{color:var(--d);font-size:13px;margin-top:8px}
-/* Main */
+/* Main — same as PC */
 #mainPage{display:none}#mainPage.active{display:block}
 .tb{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:var(--card);border-bottom:1px solid var(--b);padding:10px 20px}
 .tb input{flex:1;min-width:180px;padding:9px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none}
@@ -28,25 +27,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
 .count{font-size:13px;color:var(--t3);white-space:nowrap}
 .btn-sm{padding:7px 14px;border:1.5px solid #d0d5dd;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#555;transition:.2s;white-space:nowrap}
 .btn-sm:hover{background:#f5f5f5}
-.btn-sm.pri{border-color:var(--p);color:var(--p)}
-.btn-sm.pri:hover{background:var(--p);color:#fff}
-.btn-sm.sync-btn{border-color:#f59e0b;color:#d97706}
-.sp-group{display:flex;gap:4px}
-.sp-group span{padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer;border:1px solid var(--b);user-select:none}
+.btn-sm.pri{border-color:var(--p);color:var(--p)}.btn-sm.pri:hover{background:var(--p);color:#fff}
+.sp-group{display:flex;gap:4px}.sp-group span{padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer;border:1px solid var(--b);user-select:none}
 .sp-group span.active{background:var(--p);color:#fff;border-color:var(--p)}
-/* Table — same as PC */
-.wt{overflow-x:auto;padding:0 20px 20px}
-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06)}
-th{background:#f8f9fc;padding:12px 14px;text-align:left;font-size:13px;color:var(--t2);font-weight:700;border-bottom:2px solid var(--b);white-space:nowrap;position:sticky;top:0;z-index:1}
-td{padding:var(--sp) 14px;border-bottom:1px solid #f0f0f0;font-size:14px;vertical-align:top}
-tr:hover{background:#fafbff}
-.nw{white-space:nowrap}.mono{font-family:monospace;font-size:13px;color:var(--t2)}
+/* Tags — same as PC */
 .tags{display:flex;flex-wrap:wrap;gap:4px}.tag{background:#eef2ff;color:var(--p);padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600}
-/* Popup — same as PC pop */
+/* Popup — same as PC */
 .pop{display:none;position:fixed;z-index:200;background:var(--card);border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.18);padding:18px 22px;min-width:220px;max-width:340px}
 .pop.active{display:block}.pop .hd{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}.pop .hd .px{font-size:20px;cursor:pointer;color:var(--t3);line-height:1}.pop .row{display:flex;gap:8px;margin-bottom:8px;font-size:13px}.pop .lb{color:var(--t3);min-width:70px;user-select:none}
 .pop .row span:last-child{user-select:text;cursor:text}
-/* QR modal — same as PC */
+/* Modal — same as PC */
 .mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100;justify-content:center;align-items:center}.mo.active{display:flex}
 .md{background:var(--card);border-radius:16px;width:var(--w);max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
 .md .hd{padding:20px 24px 0;font-size:20px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
@@ -57,18 +47,43 @@ tr:hover{background:#fafbff}
 @keyframes fadeIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
 .ts.ok{background:var(--s);color:#fff}.ts.er{background:var(--d);color:#fff}
 .empty{text-align:center;padding:60px 20px;color:var(--t3)}
-/* Responsive — same as PC */
-@media(max-width:640px){
-  :root{--w:96vw}.tb{padding:10px 14px;flex-direction:column;gap:8px}.tb input{min-width:0;width:100%}
-  .mo{padding:10px}
-  th,td{padding:8px 8px;font-size:12px}
+.mono{font-family:monospace;font-size:13px;color:var(--t2)}
+
+/* ═══════════ 桌面/平板：表格布局（和 PC 端一模一样） ═══════════ */
+.wt{overflow-x:auto;padding:0 20px 20px}
+table{width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+th{background:#f8f9fc;padding:12px 14px;text-align:left;font-size:13px;color:var(--t2);font-weight:700;border-bottom:2px solid var(--b);white-space:nowrap;position:sticky;top:0;z-index:1}
+td{padding:var(--sp) 14px;border-bottom:1px solid #f0f0f0;font-size:14px;vertical-align:top}
+tr:hover{background:#fafbff}
+.nw{white-space:nowrap}
+
+/* ═══════════ 手机（<768px）：卡片布局 ═══════════ */
+.mobile-cards{display:none;padding:10px 12px 20px}
+
+@media(max-width:767px){
+  :root{--w:96vw}
+  .tb{padding:10px 14px;flex-direction:column;gap:8px}.tb input{min-width:0;width:100%}
   .login-box{width:90vw;padding:28px 20px}
+  /* Hide table, show cards */
+  .wt{display:none}
+  .mobile-cards{display:block}
+  
+  .mcard{background:var(--card);border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,.05)}
+  .mcard .gn{font-size:15px;font-weight:700;color:var(--t);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+  .mcard .gn .dot{width:7px;height:7px;border-radius:50%;background:var(--p);flex-shrink:0}
+  .mcard .info-line{display:flex;align-items:flex-start;padding:4px 0;font-size:13px;gap:8px}
+  .mcard .info-line .lbl{color:var(--t3);min-width:56px;flex-shrink:0;font-size:12px}
+  .mcard .info-line .val{color:var(--t2);word-break:break-all;font-size:12px;flex:1}
+  .mcard .qr-line{margin:4px 0}
+  .mcard .qr-thumb{border-radius:6px;width:48px;height:48px;object-fit:cover;cursor:pointer;border:1px solid #eee;vertical-align:top}
+  .mcard .m-actions{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;padding-top:8px;border-top:1px solid #f0f0f0}
+  .mcard .btn-sm{padding:6px 12px;font-size:12px}
 }
 </style>
 </head>
 <body>
 
-<!-- 登录页 -->
+<!-- 登录页 — 和 PC 完全一致 -->
 <div class="pg" id="loginPage">
 <div class="login-box">
   <h1>🎮 福利官预览</h1>
@@ -79,7 +94,7 @@ tr:hover{background:#fafbff}
 </div>
 </div>
 
-<!-- 主界面 — 和 PC 端完全相同的表格布局 -->
+<!-- 主界面 -->
 <div id="mainPage">
   <div class="tb">
     <span style="font-size:18px;font-weight:700;user-select:none">🎮 福利官预览</span>
@@ -91,15 +106,21 @@ tr:hover{background:#fafbff}
       <span data-sp="20px" id="spL">L</span>
     </div>
   </div>
-  <div class="wt">
+
+  <!-- 桌面/平板：表格 -->
+  <div class="wt" id="tableWrap">
     <table>
       <thead><tr>
         <th>游戏名称</th><th>福利官昵称</th><th>福利官名称</th><th>二维码</th><th>获客链接</th><th>链接参数</th><th>备注</th><th>操作</th>
       </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
-    <div class="empty" id="emptyState">暂无数据</div>
   </div>
+
+  <!-- 手机：卡片 -->
+  <div class="mobile-cards" id="mobileCards"></div>
+
+  <div class="empty" id="emptyState">暂无数据</div>
 </div>
 
 <!-- 福利官详情弹窗 — 和 PC 端相同的 pop 风格 -->
@@ -117,287 +138,229 @@ tr:hover{background:#fafbff}
 </div>
 </div>
 
-<!-- Toast -- same as PC -->
+<!-- Toast — 和 PC 一致 -->
 <div class="tc" id="toastContainer"></div>
 
 <script>
-var $ = function(id){ return document.getElementById(id) };
-var esc = function(s){ if(!s)return ''; var d=document.createElement('div'); d.textContent=s; return d.innerHTML };
+var $=function(id){return document.getElementById(id)};
+var esc=function(s){if(!s)return'';var d=document.createElement('div');d.textContent=s;return d.innerHTML};
 
-function toast(msg, type){
-  var c = $('toastContainer');
-  var d = document.createElement('div');
-  d.className = 'ts ' + (type||'ok');
-  d.textContent = msg;
-  c.appendChild(d);
-  setTimeout(function(){ d.style.opacity='0'; d.style.transition='opacity .3s'; setTimeout(function(){c.removeChild(d)},300) },2200);
+function toast(msg,type){
+  var c=$('toastContainer'),d=document.createElement('div');
+  d.className='ts '+(type||'ok');d.textContent=msg;c.appendChild(d);
+  setTimeout(function(){d.style.opacity='0';d.style.transition='opacity .3s';setTimeout(function(){c.removeChild(d)},300)},2200);
 }
-
 function copyText(t){
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(t).then(function(){ toast('已复制','ok') });
-  } else {
-    var ta = document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); toast('已复制','ok');
-  }
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){toast('已复制','ok')})}
+  else{var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('已复制','ok')}
 }
 
 /* Storage */
-var PWD_KEY = 'gw_pwd';
-var DATA_KEY = 'gw_data';
-var OFFICER_KEY = 'gw_officers';
-var SESSION_KEY = 'gw_session';
-var SESSION_HOURS = 4;
+var PWD_KEY='gw_pwd',DATA_KEY='gw_data',OFFICER_KEY='gw_officers',SESSION_KEY='gw_session',SESSION_HOURS=4;
 
-/* Simple hash — same as PC */
 function simpleHash(str){
   var hash=0;
-  for(var i=0;i<str.length;i++){ var c=str.charCodeAt(i); hash=((hash<<5)-hash)+c; hash=hash&hash }
-  var h=Math.abs(hash).toString(36);
-  var salt='gw_salt_2026';
-  var combined=h+salt+h.split('').reverse().join('');
-  var hash2=0;
-  for(var j=0;j<combined.length;j++){ hash2=((hash2<<5)-hash2)+combined.charCodeAt(j); hash2=hash2&hash2 }
+  for(var i=0;i<str.length;i++){var c=str.charCodeAt(i);hash=((hash<<5)-hash)+c;hash=hash&hash}
+  var h=Math.abs(hash).toString(36),salt='gw_salt_2026',combined=h+salt+h.split('').reverse().join(''),hash2=0;
+  for(var j=0;j<combined.length;j++){hash2=((hash2<<5)-hash2)+combined.charCodeAt(j);hash2=hash2&hash2}
   return 'v2:'+Math.abs(hash2).toString(36)+'_'+Math.abs(hash+hash2).toString(36);
 }
-
 function hasSession(){
-  var s=localStorage.getItem(SESSION_KEY);
-  if(!s)return false;
-  try{ var d=JSON.parse(s); if(d.expiry>Date.now())return true }catch(e){}
-  localStorage.removeItem(SESSION_KEY);
-  return false;
+  var s=localStorage.getItem(SESSION_KEY);if(!s)return false;
+  try{var d=JSON.parse(s);if(d.expiry>Date.now())return true}catch(e){}
+  localStorage.removeItem(SESSION_KEY);return false;
 }
-function pwdNotSet(){ return !localStorage.getItem(PWD_KEY); }
-
-function getData(){ try{ return JSON.parse(localStorage.getItem(DATA_KEY))||[] }catch(e){ return [] } }
-function getOfficers(){ try{ return JSON.parse(localStorage.getItem(OFFICER_KEY))||[] }catch(e){ return [] } }
-
-function getGameById(id){
-  var games=getData();
-  for(var i=0;i<games.length;i++){ if(games[i].id===id) return games[i]; }
-  return null;
-}
+function pwdNotSet(){return!localStorage.getItem(PWD_KEY)}
+function getData(){try{return JSON.parse(localStorage.getItem(DATA_KEY))||[]}catch(e){return[]}}
+function getOfficers(){try{return JSON.parse(localStorage.getItem(OFFICER_KEY))||[]}catch(e){return[]}}
+function getGameById(id){var games=getData();for(var i=0;i<games.length;i++){if(games[i].id===id)return games[i]}return null}
 
 /* Login */
-var PREVIEW_PWD = '12123';
-
-$('loginBtn').addEventListener('click', function(){
-  var pwd=$('lp').value, err=$('le');
+var PREVIEW_PWD='12123';
+$('loginBtn').addEventListener('click',function(){
+  var pwd=$('lp').value,err=$('le');
   if(!pwd){err.textContent='请输入密码';return}
-  
   var ok=false;
-  if(pwd===PREVIEW_PWD) ok=true;
-  else {
-    var stored=localStorage.getItem(PWD_KEY);
-    if(stored && simpleHash(pwd)===stored) ok=true;
-  }
-  if(!ok){err.textContent='密码错误';return;}
-  
+  if(pwd===PREVIEW_PWD)ok=true;
+  else{var stored=localStorage.getItem(PWD_KEY);if(stored&&simpleHash(pwd)===stored)ok=true}
+  if(!ok){err.textContent='密码错误';return}
   var token='';
   for(var i=0;i<32;i++)token+='abcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random()*36)];
   localStorage.setItem(SESSION_KEY,JSON.stringify({token:token,expiry:Date.now()+SESSION_HOURS*3600000}));
-  $('loginPage').classList.remove('active');
-  $('mainPage').classList.add('active');
-  render();
+  $('loginPage').classList.remove('active');$('mainPage').classList.add('active');render();
 });
 $('lp').addEventListener('keydown',function(e){if(e.key==='Enter')$('loginBtn').click()});
 
-/* Spacing — same as PC */
-var curSp = '12px';
+/* Spacing */
+var curSp='12px';
 function setSpacing(sp){
-  curSp = sp; document.body.style.setProperty('--sp', sp);
-  ['spS','spM','spL'].forEach(function(id){ $(id).classList.remove('active') });
-  if(sp==='6px') $('spS').classList.add('active');
-  if(sp==='12px') $('spM').classList.add('active');
-  if(sp==='20px') $('spL').classList.add('active');
+  curSp=sp;document.body.style.setProperty('--sp',sp);
+  ['spS','spM','spL'].forEach(function(id){$(id).classList.remove('active')});
+  if(sp==='6px')$('spS').classList.add('active');
+  if(sp==='12px')$('spM').classList.add('active');
+  if(sp==='20px')$('spL').classList.add('active');
 }
-['spS','spM','spL'].forEach(function(id){
-  $(id).addEventListener('click', function(){ setSpacing(this.getAttribute('data-sp')) });
-});
+['spS','spM','spL'].forEach(function(id){$(id).addEventListener('click',function(){setSpacing(this.getAttribute('data-sp'))})});
 
-/* Render table — same rows as PC, only copy actions */
+/* ═══════════ RENDER — 桌面表格 + 手机卡片 ═══════════ */
 function render(){
-  var games = getData();
-  var kw = ($('searchInput').value||'').trim().toLowerCase();
-  if(kw){
-    games = games.filter(function(g){
-      if((g.game_name||'').toLowerCase().indexOf(kw)>=0) return true;
-      var offs = getOfficers();
-      var sel = (g.officer_ids||[]).map(function(oid){ var o=offs.find(function(x){return x.id===oid}); return o?(o.nick+o.name):'' }).join(' ');
-      return sel.toLowerCase().indexOf(kw)>=0;
-    });
-  }
-  $('countLabel').textContent = '共 '+games.length+' 条';
-  var tbody = $('tbody');
+  var games=getData();
+  var kw=($('searchInput').value||'').trim().toLowerCase();
+  if(kw){games=games.filter(function(g){
+    if((g.game_name||'').toLowerCase().indexOf(kw)>=0)return true;
+    var offs=getOfficers(),sel=(g.officer_ids||[]).map(function(oid){var o=offs.find(function(x){return x.id===oid});return o?(o.nick+o.name):''}).join(' ');
+    return sel.toLowerCase().indexOf(kw)>=0;
+  })}
+  $('countLabel').textContent='共 '+games.length+' 条';
+  var tbody=$('tbody'),mc=$('mobileCards');
   if(games.length===0){
-    $('emptyState').style.display='block';
-    tbody.innerHTML='';
-    return;
+    $('emptyState').style.display='block';$('tableWrap').style.display='none';mc.style.display='none';return;
   }
   $('emptyState').style.display='none';
-  var offs = getOfficers();
-  var html = '';
-  for(var i=0;i<games.length;i++){
-    var g = games[i];
-    var sel = (g.officer_ids||[]).map(function(oid){ return offs.find(function(x){return x.id===oid}) }).filter(Boolean);
-    var nickTags = sel.map(function(o){ return '<span class="tag" style="cursor:pointer" onclick="event.stopPropagation();showOfficerDetail(\''+o.id+'\')">'+esc(o.nick)+'</span>' }).join('');
-    var nameHtml = '';
-    var seenNames = {};
-    var uniqueNames = [];
-    for(var j=0;j<sel.length;j++){
-      var nm = sel[j].name || '—';
-      if(!seenNames[nm]){ seenNames[nm]=true; uniqueNames.push(sel[j]); }
-    }
-    nameHtml = uniqueNames.map(function(o){
-      return '<div style="cursor:pointer;color:var(--p);font-size:13px" onclick="showOfficerDetail(\''+o.id+'\')">'+esc(o.name||'—')+'</div>';
-    }).join('');
-    var qrImg = g.qr_url ? '<img src="'+esc(g.qr_url)+'" style="width:48px;height:48px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="showQr(\''+esc(g.qr_url)+'\',\''+esc(g.game_name)+'\')">' : '—';
-    var link = g.customer_link||'';
-    var fullLink = link+(g.link_params||'');
-    html += '<tr>'
-      + '<td style="font-weight:600">'+esc(g.game_name)+'</td>'
-      + '<td><div class="tags">'+nickTags+'</div></td>'
-      + '<td>'+nameHtml+'</td>'
-      + '<td>'+qrImg+'</td>'
-      + '<td>'+(link?'<span class="mono" style="max-width:160px;display:inline-block;overflow:hidden;text-overflow:ellipsis">'+esc(link)+'</span>':'—')+'</td>'
-      + '<td><span class="mono">'+(g.link_params||'—')+'</span></td>'
-      + '<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis">'+esc(g.notes||'—')+'</td>'
-      + '<td class="nw">'
-        + '<div style="display:flex;flex-wrap:wrap;gap:4px">'
-        + (link?'<button class="btn-sm" onclick="copyText(\''+esc(link)+'\')">🔗链接</button>':'')
-        + ((g.link_params||'')?'<button class="btn-sm" onclick="copyText(\''+esc(g.link_params)+'\')">🔗参数</button>':'')
-        + (fullLink?'<button class="btn-sm pri" onclick="copyText(\''+esc(fullLink)+'\')">🔗完整</button>':'')
-        + (g.qr_url?'<button class="btn-sm" onclick="copyQrAction(\''+esc(g.qr_url)+'\')">🖼二维码</button>':'')
-        + '<button class="btn-sm" onclick="copyFullText(\''+g.id+'\')">📄全文</button>'
-        + '</div>'
-      + '</td>'
-      + '</tr>';
-  }
-  tbody.innerHTML = html;
-}
+  $('tableWrap').style.display='';mc.style.display='';
 
+  var offs=getOfficers();
+
+  /* Desktop: table rows */
+  var thtml='';
+  for(var i=0;i<games.length;i++){
+    var g=games[i];
+    var sel=(g.officer_ids||[]).map(function(oid){return offs.find(function(x){return x.id===oid})}).filter(Boolean);
+    var nickTags=sel.map(function(o){return'<span class="tag" style="cursor:pointer" onclick="event.stopPropagation();showOfficerDetail(\''+o.id+'\')">'+esc(o.nick)+'</span>'}).join('');
+    var nameHtml='',seenNames={},uniqueNames=[];
+    for(var j=0;j<sel.length;j++){var nm=sel[j].name||'—';if(!seenNames[nm]){seenNames[nm]=true;uniqueNames.push(sel[j])}}
+    nameHtml=uniqueNames.map(function(o){return'<div style="cursor:pointer;color:var(--p);font-size:13px" onclick="showOfficerDetail(\''+o.id+'\')">'+esc(o.name||'—')+'</div>'}).join('');
+    var qrImg=g.qr_url?'<img src="'+esc(g.qr_url)+'" style="width:48px;height:48px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="showQr(\''+esc(g.qr_url)+'\',\''+esc(g.game_name)+'\')">':'—';
+    var link=g.customer_link||'',fullLink=link+(g.link_params||'');
+    thtml+='<tr>'
+      +'<td style="font-weight:600">'+esc(g.game_name)+'</td>'
+      +'<td><div class="tags">'+nickTags+'</div></td>'
+      +'<td>'+nameHtml+'</td>'
+      +'<td>'+qrImg+'</td>'
+      +'<td>'+(link?'<span class="mono" style="max-width:160px;display:inline-block;overflow:hidden;text-overflow:ellipsis">'+esc(link)+'</span>':'—')+'</td>'
+      +'<td><span class="mono">'+(g.link_params||'—')+'</span></td>'
+      +'<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis">'+esc(g.notes||'—')+'</td>'
+      +'<td class="nw"><div style="display:flex;flex-wrap:wrap;gap:4px">'
+        +(link?'<button class="btn-sm" onclick="copyText(\''+esc(link)+'\')">🔗链接</button>':'')
+        +((g.link_params||'')?'<button class="btn-sm" onclick="copyText(\''+esc(g.link_params)+'\')">🔗参数</button>':'')
+        +(fullLink?'<button class="btn-sm pri" onclick="copyText(\''+esc(fullLink)+'\')">🔗完整</button>':'')
+        +(g.qr_url?'<button class="btn-sm" onclick="copyQrAction(\''+esc(g.qr_url)+'\')">🖼二维码</button>':'')
+        +'<button class="btn-sm" onclick="copyFullText(\''+g.id+'\')">📄全文</button>'
+      +'</div></td></tr>';
+  }
+  tbody.innerHTML=thtml;
+
+  /* Mobile: cards */
+  var mhtml='';
+  for(var i=0;i<games.length;i++){
+    var g=games[i];
+    var sel=(g.officer_ids||[]).map(function(oid){return offs.find(function(x){return x.id===oid})}).filter(Boolean);
+    var link=g.customer_link||'',fullLink=link+(g.link_params||'');
+    mhtml+='<div class="mcard">';
+    /* Game name */
+    mhtml+='<div class="gn"><span class="dot"></span>'+esc(g.game_name)+'</div>';
+    /* Officer nicks */
+    if(sel.length){
+      mhtml+='<div class="info-line"><span class="lbl">昵称</span><div class="tags">';
+      for(var j=0;j<sel.length;j++){
+        mhtml+='<span class="tag" onclick="event.stopPropagation();showOfficerDetail(\''+sel[j].id+'\')">'+esc(sel[j].nick)+'</span>';
+      }
+      mhtml+='</div></div>';
+    }
+    /* Officer names */
+    var seenN={},unq=[];
+    for(var j=0;j<sel.length;j++){var nm=sel[j].name||'—';if(!seenN[nm]){seenN[nm]=true;unq.push(sel[j])}}
+    if(unq.length){
+      mhtml+='<div class="info-line"><span class="lbl">名称</span><span class="val" style="color:var(--p)" onclick="showOfficerDetail(\''+unq[0].id+'\')">'+esc(unq[0].name||'—')+'</span></div>';
+    }
+    /* Link */
+    if(link)mhtml+='<div class="info-line"><span class="lbl">链接</span><span class="val mono">'+esc(link)+'</span></div>';
+    if(g.link_params)mhtml+='<div class="info-line"><span class="lbl">参数</span><span class="val mono">'+esc(g.link_params)+'</span></div>';
+    if(g.notes)mhtml+='<div class="info-line"><span class="lbl">备注</span><span class="val">'+esc(g.notes)+'</span></div>';
+    /* QR */
+    if(g.qr_url)mhtml+='<div class="qr-line"><img class="qr-thumb" src="'+esc(g.qr_url)+'" onclick="event.stopPropagation();showQr(\''+esc(g.qr_url)+'\',\''+esc(g.game_name)+'\')"></div>';
+    /* Actions */
+    mhtml+='<div class="m-actions">'
+      +(link?'<button class="btn-sm" onclick="event.stopPropagation();copyText(\''+esc(link)+'\')">🔗链接</button>':'')
+      +(g.link_params?'<button class="btn-sm" onclick="event.stopPropagation();copyText(\''+esc(g.link_params)+'\')">🔗参数</button>':'')
+      +(fullLink?'<button class="btn-sm pri" onclick="event.stopPropagation();copyText(\''+esc(fullLink)+'\')">🔗完整</button>':'')
+      +(g.qr_url?'<button class="btn-sm" onclick="event.stopPropagation();copyQrAction(\''+esc(g.qr_url)+'\')">🖼二维码</button>':'')
+      +'<button class="btn-sm" onclick="event.stopPropagation();copyFullText(\''+g.id+'\')">📄全文</button>'
+    +'</div>';
+    mhtml+='</div>';
+  }
+  mc.innerHTML=mhtml;
+}
 $('searchInput').addEventListener('input',function(){render()});
 
 function copyFullText(id){
-  var g = getGameById(id); if(!g) return;
-  var offs = getOfficers();
-  var sel = (g.officer_ids||[]).map(function(oid){ return offs.find(function(x){return x.id===oid}) }).filter(Boolean);
-  var lines = [];
-  lines.push('游戏名称：'+(g.game_name||''));
-  if(sel.length){
-    lines.push('福利官昵称：'+sel.map(function(o){return o.nick}).join('、'));
-    lines.push('福利官名称：'+sel.map(function(o){return o.name||'—'}).join('、'));
-  }
-  if(g.customer_link) lines.push('获客链接：'+g.customer_link);
-  if(g.link_params) lines.push('链接参数：'+g.link_params);
-  if(g.qr_url) lines.push('二维码：'+g.qr_url);
-  if(g.notes) lines.push('备注：'+g.notes);
+  var g=getGameById(id);if(!g)return;
+  var offs=getOfficers(),sel=(g.officer_ids||[]).map(function(oid){return offs.find(function(x){return x.id===oid})}).filter(Boolean);
+  var lines=['游戏名称：'+(g.game_name||'')];
+  if(sel.length){lines.push('福利官昵称：'+sel.map(function(o){return o.nick}).join('、'));lines.push('福利官名称：'+sel.map(function(o){return o.name||'—'}).join('、'))}
+  if(g.customer_link)lines.push('获客链接：'+g.customer_link);
+  if(g.link_params)lines.push('链接参数：'+g.link_params);
+  if(g.qr_url)lines.push('二维码：'+g.qr_url);
+  if(g.notes)lines.push('备注：'+g.notes);
   copyText(lines.join('\n'));
 }
-
 function copyQrAction(url){
-  if(!url) return;
-  if(url.indexOf('data:image')===0){
-    fetch(url).then(function(r){return r.blob()}).then(function(blob){
-      if(navigator.clipboard && navigator.clipboard.write){
-        navigator.clipboard.write([new ClipboardItem({'image/png':blob})]).then(function(){toast('二维码已复制','ok')});
-      } else { toast('复制失败：浏览器不支持','er') }
-    }).catch(function(){ copyText(url); toast('二维码链接已复制','ok') });
-  } else {
-    copyText(url);
-    toast('二维码链接已复制','ok');
-  }
+  if(!url)return;
+  if(url.indexOf('data:image')===0){fetch(url).then(function(r){return r.blob()}).then(function(blob){
+    if(navigator.clipboard&&navigator.clipboard.write){navigator.clipboard.write([new ClipboardItem({'image/png':blob})]).then(function(){toast('二维码已复制','ok')})}
+    else{toast('复制失败','er')}
+  }).catch(function(){copyText(url);toast('二维码链接已复制','ok')})}
+  else{copyText(url);toast('二维码链接已复制','ok')}
 }
 
-/* Officer detail popup — same as PC pop */
-var officerPopVisible = false;
-
+/* Officer detail popup */
+var officerPopVisible=false;
 function showOfficerDetail(oid){
   var offs=getOfficers(),o=null;
   for(var i=0;i<offs.length;i++){if(offs[i].id===oid){o=offs[i];break}}
   if(!o)return;
-  
-  var pop = $('officerPop');
-  var html = '<div class="hd"><span>'+(o.seq?'['+esc(o.seq)+'] ':'')+esc(o.nick)+'</span><span class="px" style="cursor:pointer;font-size:20px" onclick="hideOfficerPop()">×</span></div>';
-  if(o.seq) html += '<div class="row"><span class="lb">项目序列</span><span>'+esc(o.seq)+'</span></div>';
-  html += '<div class="row"><span class="lb">昵称</span><span>'+esc(o.nick)+'</span></div>';
-  if(o.name) html += '<div class="row"><span class="lb">名称</span><span>'+esc(o.name)+'</span></div>';
-  if(o.phone) html += '<div class="row"><span class="lb">手机</span><span>'+esc(o.phone)+'</span></div>';
-  if(o.wechat) html += '<div class="row"><span class="lb">微信</span><span>'+esc(o.wechat)+'</span></div>';
-  if(o.realName) html += '<div class="row"><span class="lb">实名</span><span>'+esc(o.realName)+'</span></div>';
-  if(o.qiyu) html += '<div class="row"><span class="lb">七鱼</span><span>'+esc(o.qiyu)+'</span></div>';
-  if(o.device) html += '<div class="row"><span class="lb">设备</span><span>'+esc(o.device)+'</span></div>';
-  
-  pop.innerHTML = html;
-  pop.classList.add('active');
-  officerPopVisible = true;
+  var pop=$('officerPop');
+  var h='<div class="hd"><span>'+(o.seq?'['+esc(o.seq)+'] ':'')+esc(o.nick)+'</span><span class="px" style="cursor:pointer;font-size:20px" onclick="hideOfficerPop()">×</span></div>';
+  if(o.seq)h+='<div class="row"><span class="lb">项目序列</span><span>'+esc(o.seq)+'</span></div>';
+  h+='<div class="row"><span class="lb">昵称</span><span>'+esc(o.nick)+'</span></div>';
+  if(o.name)h+='<div class="row"><span class="lb">名称</span><span>'+esc(o.name)+'</span></div>';
+  if(o.phone)h+='<div class="row"><span class="lb">手机</span><span>'+esc(o.phone)+'</span></div>';
+  if(o.wechat)h+='<div class="row"><span class="lb">微信</span><span>'+esc(o.wechat)+'</span></div>';
+  if(o.realName)h+='<div class="row"><span class="lb">实名</span><span>'+esc(o.realName)+'</span></div>';
+  if(o.qiyu)h+='<div class="row"><span class="lb">七鱼</span><span>'+esc(o.qiyu)+'</span></div>';
+  if(o.device)h+='<div class="row"><span class="lb">设备</span><span>'+esc(o.device)+'</span></div>';
+  pop.innerHTML=h;pop.classList.add('active');officerPopVisible=true;
 }
+function hideOfficerPop(){$('officerPop').classList.remove('active');officerPopVisible=false}
+document.addEventListener('click',function(e){if(!officerPopVisible)return;if(!$('officerPop').contains(e.target))hideOfficerPop()});
 
-function hideOfficerPop(){
-  $('officerPop').classList.remove('active');
-  officerPopVisible = false;
-}
-
-// Click outside to close popup
-document.addEventListener('click', function(e){
-  if(!officerPopVisible) return;
-  var pop = $('officerPop');
-  if(!pop.contains(e.target)){
-    hideOfficerPop();
-  }
-});
-
-/* QR modal — same as PC */
-function showQr(url, gameName){
-  $('qrBig').src = url;
-  $('qrTitle').textContent = (gameName?gameName+' — ':'') + '二维码预览';
-  $('qrModal').classList.add('active');
-}
-function closeQr(){ $('qrModal').classList.remove('active') }
+/* QR modal */
+function showQr(url,gameName){$('qrBig').src=url;$('qrTitle').textContent=(gameName?gameName+' — ':'')+'二维码预览';$('qrModal').classList.add('active')}
+function closeQr(){$('qrModal').classList.remove('active')}
 function copyQrImage(){
-  var img = $('qrBig');
-  if(!img.src) return;
-  var canvas = document.createElement('canvas');
-  canvas.width = img.naturalWidth || 300;
-  canvas.height = img.naturalHeight || 300;
-  var ctx = canvas.getContext('2d');
-  ctx.drawImage(img, 0, 0);
-  canvas.toBlob(function(blob){
-    if(navigator.clipboard && navigator.clipboard.write){
-      navigator.clipboard.write([new ClipboardItem({'image/png':blob})]).then(function(){toast('二维码已复制','ok')});
-    } else { toast('复制失败：浏览器不支持','er') }
+  var img=$('qrBig');if(!img.src)return;
+  var c=document.createElement('canvas');c.width=img.naturalWidth||300;c.height=img.naturalHeight||300;
+  c.getContext('2d').drawImage(img,0,0);
+  c.toBlob(function(blob){
+    if(navigator.clipboard&&navigator.clipboard.write){navigator.clipboard.write([new ClipboardItem({'image/png':blob})]).then(function(){toast('二维码已复制','ok')})}
+    else{toast('复制失败','er')}
   });
 }
 
-/* ESC close */
-document.addEventListener('keydown', function(e){
-  if(e.key==='Escape'){
-    closeQr(); hideOfficerPop();
-  }
-});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeQr();hideOfficerPop()}});
 
-/* Remote data loading */
+/* Remote data */
 function loadRemoteData(cb){
   fetch('data.json?'+Date.now())
-    .then(function(r){ if(!r.ok) throw new Error('fail'); return r.json(); })
-    .then(function(json){
-      if(!json) throw new Error('empty');
-      if(json.games) localStorage.setItem(DATA_KEY, JSON.stringify(json.games));
-      if(json.officers) localStorage.setItem(OFFICER_KEY, JSON.stringify(json.officers));
-    })
+    .then(function(r){if(!r.ok)throw Error();return r.json()})
+    .then(function(json){if(json){if(json.games)localStorage.setItem(DATA_KEY,JSON.stringify(json.games));if(json.officers)localStorage.setItem(OFFICER_KEY,JSON.stringify(json.officers))}})
     .catch(function(){})
-    .finally(function(){ cb(); });
+    .finally(function(){cb()});
 }
 
-/* Init */
 function boot(){
-  if(hasSession() || pwdNotSet()){
-    $('loginPage').classList.remove('active');
-    $('mainPage').classList.add('active');
-    loadRemoteData(function(){ render(); });
-  } else {
-    $('loginPage').classList.add('active');
-  }
+  if(hasSession()||pwdNotSet()){$('loginPage').classList.remove('active');$('mainPage').classList.add('active');loadRemoteData(function(){render()})}
+  else{$('loginPage').classList.add('active')}
 }
 boot();
 </script>
