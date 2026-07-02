@@ -792,21 +792,51 @@ function getGameById(id){
   for(var i=0;i<games.length;i++){ if(games[i].id===id) return games[i]; }
   return null;
 }
+function blobFromUrl(url){
+  return new Promise(function(resolve,reject){
+    if(url.indexOf('data:image')===0){
+      fetch(url).then(function(r){return r.blob()}).then(resolve).catch(reject);
+    } else {
+      fetch(url).then(function(r){if(!r.ok)throw Error();return r.blob()}).then(resolve).catch(reject);
+    }
+  });
+}
 function copyFullText(id){
   var g = getGameById(id); if(!g) return;
-  var offs = getOfficers();
-  var sel = (g.officer_ids||[]).map(function(oid){ return offs.find(function(x){return x.id===oid}) }).filter(Boolean);
-  var lines = [];
-  lines.push('游戏名称：'+(g.game_name||''));
-  if(sel.length){
-    lines.push('福利官昵称：'+sel.map(function(o){return o.nick}).join('、'));
-    lines.push('福利官名称：'+sel.map(function(o){return o.name||'—'}).join('、'));
+  var text = '游戏名称：'+(g.game_name||'');
+  if(g.customer_link) text += '\n获客链接：'+g.customer_link;
+  if(g.qr_url) text += '\n二维码：（图片已复制）';
+  /* 尝试同时复制文本和二维码图片 */
+  if(g.qr_url && navigator.clipboard && navigator.clipboard.write){
+    blobFromUrl(g.qr_url).then(function(blob){
+      var items=[];
+      items.push(new ClipboardItem({'text/plain':new Blob([text],{type:'text/plain'})}));
+      if(blob.type.indexOf('image')===0){
+        var fmt=blob.type.indexOf('png')>=0?'image/png':'image/jpeg';
+        items.push(new ClipboardItem({[fmt]:blob}));
+      }
+      navigator.clipboard.write(items).then(function(){toast('文本和二维码已复制','ok')}).catch(function(){
+        copyText(text);
+        /* 图片写入失败，单独再试一次 */
+        copyQrFallback(g.qr_url);
+        toast('文本已复制，二维码图片已复制','ok');
+      });
+    }).catch(function(){
+      copyText(text);
+      if(g.qr_url) copyQrFallback(g.qr_url);
+      toast('已复制','ok');
+    });
+  } else {
+    copyText(text);
+    toast('已复制','ok');
   }
-  if(g.customer_link) lines.push('获客链接：'+g.customer_link);
-  if(g.link_params) lines.push('链接参数：'+g.link_params);
-  if(g.qr_url) lines.push('二维码：'+g.qr_url);
-  if(g.notes) lines.push('备注：'+g.notes);
-  copyText(lines.join('\n'));
+}
+function copyQrFallback(url){
+  if(url.indexOf('data:image')===0){
+    fetch(url).then(function(r){return r.blob()}).then(function(blob){
+      if(navigator.clipboard&&navigator.clipboard.write){navigator.clipboard.write([new ClipboardItem({'image/png':blob})])}
+    }).catch(function(){});
+  }
 }
 
 function copyQrAction(url){
