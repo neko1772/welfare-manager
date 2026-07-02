@@ -293,51 +293,18 @@ function render(){
 }
 $('searchInput').addEventListener('input',function(){render()});
 
-function blobFromUrl(url){
-  return new Promise(function(resolve,reject){
-    if(url.indexOf('data:image')===0){
-      fetch(url).then(function(r){return r.blob()}).then(resolve).catch(reject);
-    } else {
-      fetch(url).then(function(r){if(!r.ok)throw Error();return r.blob()}).then(resolve).catch(reject);
-    }
-  });
-}
 function copyFullText(id){
   var g=getGameById(id);if(!g)return;
-  var text='游戏名称：'+(g.game_name||'');
-  if(g.customer_link)text+='\n获客链接：'+g.customer_link;
-  if(g.qr_url)text+='\n二维码：（图片已复制）';
-  if(g.qr_url&&navigator.clipboard&&navigator.clipboard.write){
-    blobFromUrl(g.qr_url).then(function(blob){
-      var items=[];
-      items.push(new ClipboardItem({'text/plain':new Blob([text],{type:'text/plain'})}));
-      if(blob.type.indexOf('image')===0){
-        var fmt=blob.type.indexOf('png')>=0?'image/png':'image/jpeg';
-        items.push(new ClipboardItem({[fmt]:blob}));
-      }
-      navigator.clipboard.write(items).then(function(){toast('文本和二维码已复制','ok')}).catch(function(){
-        copyText(text);
-        copyQrFallback(g.qr_url);
-        toast('文本已复制，二维码图片已复制','ok');
-      });
-    }).catch(function(){
-      copyText(text);
-      if(g.qr_url)copyQrFallback(g.qr_url);
-      toast('已复制','ok');
-    });
-  }else{
-    copyText(text);
-    toast('已复制','ok');
-  }
+  var offs=getOfficers();
+  var sel=(g.officer_ids||[]).map(function(oid){return offs.find(function(x){return x.id===oid})}).filter(Boolean);
+  var lines=[];
+  lines.push('游戏名称：'+(g.game_name||''));
+  if(g.customer_link)lines.push('获客链接：'+g.customer_link);
+  if(sel.length)lines.push('昵称：'+sel.map(function(o){return o.nick}).join('、'));
+  copyText(lines.join('\n'));
+  toast('已复制','ok');
 }
-function copyQrFallback(url){
-  if(!url)return;
-  if(url.indexOf('data:image')===0){
-    fetch(url).then(function(r){return r.blob()}).then(function(blob){
-      if(navigator.clipboard&&navigator.clipboard.write){navigator.clipboard.write([new ClipboardItem({'image/png':blob})])}
-    }).catch(function(){});
-  }
-}
+
 function copyQrAction(url){
   if(!url)return;
   if(url.indexOf('data:image')===0){fetch(url).then(function(r){return r.blob()}).then(function(blob){
