@@ -155,8 +155,8 @@ function copyText(t){
   else{var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('已复制','ok')}
 }
 
-/* Storage */
-var PWD_KEY='gw_pwd',DATA_KEY='gw_data',OFFICER_KEY='gw_officers',SESSION_KEY='gw_session',SESSION_HOURS=4;
+/* Storage — 独立 key，避免覆盖管理页数据 */
+var PWD_KEY='gw_pwd',PREVIEW_DATA_KEY='gw_preview_data',PREVIEW_OFFICER_KEY='gw_preview_officers',SESSION_KEY='gw_session',SESSION_HOURS=4;
 
 function simpleHash(str){
   var hash=0;
@@ -171,8 +171,8 @@ function hasSession(){
   localStorage.removeItem(SESSION_KEY);return false;
 }
 function pwdNotSet(){return!localStorage.getItem(PWD_KEY)}
-function getData(){try{return JSON.parse(localStorage.getItem(DATA_KEY))||[]}catch(e){return[]}}
-function getOfficers(){try{return JSON.parse(localStorage.getItem(OFFICER_KEY))||[]}catch(e){return[]}}
+function getData(){try{return JSON.parse(localStorage.getItem(PREVIEW_DATA_KEY))||[]}catch(e){return[]}}
+function getOfficers(){try{return JSON.parse(localStorage.getItem(PREVIEW_OFFICER_KEY))||[]}catch(e){return[]}}
 function getGameById(id){var games=getData();for(var i=0;i<games.length;i++){if(games[i].id===id)return games[i]}return null}
 
 /* Login */
@@ -349,12 +349,23 @@ function copyQrImage(){
 
 document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeQr();hideOfficerPop()}});
 
-/* Remote data */
+/* Remote data — 加载到独立 key，避免覆盖管理页 */
 function loadRemoteData(cb){
   fetch('data.json?'+Date.now())
     .then(function(r){if(!r.ok)throw Error();return r.json()})
-    .then(function(json){if(json){if(json.games)localStorage.setItem(DATA_KEY,JSON.stringify(json.games));if(json.officers)localStorage.setItem(OFFICER_KEY,JSON.stringify(json.officers))}})
-    .catch(function(){})
+    .then(function(json){
+      if(json){
+        if(json.games)localStorage.setItem(PREVIEW_DATA_KEY,JSON.stringify(json.games));
+        if(json.officers)localStorage.setItem(PREVIEW_OFFICER_KEY,JSON.stringify(json.officers));
+      }
+    })
+    .catch(function(){
+      /* 远程加载失败：如果 preview 没有数据，回退到管理页的数据 */
+      var pd=localStorage.getItem('gw_data'),po=localStorage.getItem('gw_officers');
+      var curD=localStorage.getItem(PREVIEW_DATA_KEY),curO=localStorage.getItem(PREVIEW_OFFICER_KEY);
+      if(pd && !curD)localStorage.setItem(PREVIEW_DATA_KEY,pd);
+      if(po && !curO)localStorage.setItem(PREVIEW_OFFICER_KEY,po);
+    })
     .finally(function(){cb()});
 }
 
