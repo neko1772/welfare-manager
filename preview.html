@@ -301,7 +301,7 @@ function copyFullText(id){
   lines.push('游戏名称：'+(g.game_name||''));
   if(g.customer_link)lines.push('获客链接：'+g.customer_link);
   if(sel.length)lines.push('福利官昵称：'+sel.map(function(o){return o.nick}).join('、'));
-  if(g.link_params)lines.push('二维码项目参数名：'+g.link_params);
+  if(g.link_params)lines.push(g.link_params);
   copyText(lines.join('\n'));
   toast('已复制','ok');
 }
