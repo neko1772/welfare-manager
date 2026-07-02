@@ -132,6 +132,7 @@ tr:hover{background:#fafbff}
     <button class="btn-sm pri" id="btnDownloadTemplate">📥 下载导入模板</button>
     <button class="btn-sm pri" id="btnImport">📂 导入</button>
     <button class="btn-sm pri" id="btnExport">📤 导出</button>
+    <button class="btn-sm" id="btnSync" style="border-color:#f59e0b;color:#d97706">📱 同步到手机</button>
     <button class="btn-sm" id="btnLogout">退出</button>
     <button class="btn btn-p" id="btnAdd" style="white-space:nowrap">＋ 添加</button>
   </div>
@@ -305,6 +306,23 @@ A002	小礼	和平福利官	139xxx	wx456	李四	是	iPhone 14'></textarea>
 <!-- 福利官详情弹窗 -->
 <div class="pop" id="officerPop"></div>
 
+<!-- GitHub Token 输入弹窗 -->
+<div class="mo" id="gitTokenModal">
+<div class="md" style="max-width:420px">
+  <div class="hd"><span>🔑 设置 GitHub Token</span><span class="x" onclick="closeGitToken()">×</span></div>
+  <div class="mb">
+    <p style="font-size:13px;color:var(--t2);margin-bottom:10px">需要 GitHub Personal Access Token 才能推送数据到 data.json</p>
+    <p style="font-size:12px;color:var(--t3);margin-bottom:12px">1. 打开 <a href="https://github.com/settings/tokens" target="_blank" style="color:var(--p)">github.com/settings/tokens</a><br>2. 生成 Token → 勾选 <b>repo</b> 权限<br>3. 粘贴到下面</p>
+    <div class="fg"><label>GitHub Token</label><input type="password" id="gitTokenInput" placeholder="ghp_..." autocomplete="off"></div>
+    <div id="gitTokenErr" style="color:var(--d);font-size:13px;margin-top:6px;display:none"></div>
+  </div>
+  <div class="mf">
+    <button class="btn btn-o" onclick="closeGitToken()">取消</button>
+    <button class="btn btn-p" id="btnSaveGitToken">保存并同步</button>
+  </div>
+</div>
+</div>
+
 <!-- QR 查看弹窗 -->
 <div class="mo" id="qrModal">
 <div class="md" style="max-width:420px;text-align:center">
@@ -352,6 +370,9 @@ var SESSION_KEY = 'gw_session';
 var SESSION_HOURS = 4;
 var ADMIN_VERIFY_KEY = 'gw_admin_verified';
 var ADMIN_VERIFY_MINUTES = 5;
+var GH_TOKEN_KEY = 'gw_gh_token';
+var GH_REPO = 'neko1772/welfare-manager';
+var GH_FILE = 'data.json';
 
 /* ════════════════════ HASH ════════════════════ */
 function simpleHash(str){
@@ -1220,8 +1241,88 @@ $('btnAdd').addEventListener('click', function(){openEditModal(null)});
 /* ════════════════════ ESC CLOSE ════════════════════ */
 document.addEventListener('keydown', function(e){
   if(e.key==='Escape'){
-    closeEdit(); closePwdModal(); closeImport(); closeOfficerLib(); closeOfficerEdit(); closeQr(); closeDeleteVerify();
+    closeEdit(); closePwdModal(); closeImport(); closeOfficerLib(); closeOfficerEdit(); closeQr(); closeDeleteVerify(); closeGitToken();
   }
+});
+
+/* ════════════════════ GITHUB SYNC ════════════════════ */
+function getGitToken(){
+  return localStorage.getItem(GH_TOKEN_KEY) || '';
+}
+
+function closeGitToken(){ $('gitTokenModal').classList.remove('active') }
+
+$('btnSaveGitToken').addEventListener('click', function(){
+  var token = $('gitTokenInput').value.trim();
+  if(!token){ $('gitTokenErr').textContent='请输入 Token'; $('gitTokenErr').style.display='block'; return; }
+  if(!token.match(/^gh[pousr]_/)){
+    $('gitTokenErr').textContent='Token 格式不正确，应以 ghp_ 或 gho_ 开头';
+    $('gitTokenErr').style.display='block'; return;
+  }
+  localStorage.setItem(GH_TOKEN_KEY, token);
+  $('gitTokenModal').classList.remove('active');
+  toast('Token 已保存，开始同步...','ok');
+  doSync(token);
+});
+
+function doSync(token){
+  var data = {
+    games: getData(),
+    officers: getOfficers()
+  };
+  var content = JSON.stringify(data);
+  var base64 = btoa(unescape(encodeURIComponent(content)));
+
+  var apiBase = 'https://api.github.com/repos/' + GH_REPO + '/contents/' + GH_FILE;
+
+  // Step 1: get current file SHA
+  fetch(apiBase, { headers: { 'Authorization': 'token ' + token } })
+    .then(function(r){
+      if(r.status===401) throw new Error('Token 无效，请在 GitHub 重新生成并确保勾选了 repo 权限');
+      return r.json().then(function(j){ return {status:r.status, body:j} });
+    })
+    .then(function(res){
+      var sha = '';
+      if(res.status===200) sha = res.body.sha;
+      // Step 2: PUT updated content
+      var payload = { message: 'sync data from manager', content: base64 };
+      if(sha) payload.sha = sha;
+      return fetch(apiBase, {
+        method: 'PUT',
+        headers: { 'Authorization': 'token ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    })
+    .then(function(r){
+      if(r.status===404) throw new Error('仓库不存在，请检查仓库名: ' + GH_REPO);
+      if(!r.ok) throw new Error('GitHub API 返回错误 ' + r.status);
+      return r.json();
+    })
+    .then(function(j){
+      var dt = new Date().toLocaleString();
+      toast('已同步到手机！\n更新时间：'+dt+'','ok');
+    })
+    .catch(function(e){
+      toast(e.message||'同步失败，稍后重试','er');
+    });
+}
+
+$('btnSync').addEventListener('click', function(){
+  var token = getGitToken();
+  if(token){
+    // 已有 token，直接同步
+    var btn = $('btnSync');
+    btn.textContent = '⏳ 同步中...';
+    btn.disabled = true;
+    doSync(token);
+    setTimeout(function(){ btn.textContent = '📱 同步到手机'; btn.disabled = false }, 3000);
+    return;
+  }
+  // 没有 token，弹出输入弹窗
+  $('gitTokenInput').value = '';
+  $('gitTokenErr').style.display = 'none';
+  $('gitTokenModal').classList.add('active');
+  setTimeout(function(){ $('gitTokenInput').focus() }, 100);
 });
 
 /* ════════════════════ INIT ════════════════════ */
