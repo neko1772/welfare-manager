@@ -799,7 +799,8 @@ function copyFullText(id){
   var lines = [];
   lines.push('游戏名称：'+(g.game_name||''));
   if(g.customer_link) lines.push('获客链接：'+g.customer_link);
-  if(sel.length) lines.push('昵称：'+sel.map(function(o){return o.nick}).join('、'));
+  if(sel.length) lines.push('福利官昵称：'+sel.map(function(o){return o.nick}).join('、'));
+  if(g.link_params) lines.push('二维码项目参数名：'+g.link_params);
   copyText(lines.join('\n'));
   toast('已复制','ok');
 }
@@ -1008,7 +1009,7 @@ function showOfficerDetail(oid){
   pop._oid = oid;
   pop.innerHTML='<div class="hd"><span>'+esc((o.seq?'['+o.seq+'] ':'')+o.nick)+'</span><span class="px" onclick="hideOfficerPop();event.stopPropagation()">×</span></div>'
     + (o.seq?'<div class="row"><span class="lb">项目序列：</span><span>'+esc(o.seq)+'</span></div>':'')
-    + '<div class="row"><span class="lb">昵称：</span><span>'+esc(o.nick)+'</span></div>'
+    + '<div class="row"><span class="lb">福利官昵称：</span><span>'+esc(o.nick)+'</span></div>'
     + (o.name?'<div class="row"><span class="lb">名称：</span><span>'+esc(o.name)+'</span></div>':'')
     + (o.phone?'<div class="row"><span class="lb">手机：</span><span>'+esc(o.phone)+'</span></div>':'')
     + (o.wechat?'<div class="row"><span class="lb">微信：</span><span>'+esc(o.wechat)+'</span></div>':'')

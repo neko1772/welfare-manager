@@ -261,7 +261,7 @@ function render(){
     mhtml+='<div class="gn"><span class="dot"></span>'+esc(g.game_name)+'</div>';
     /* Officer nicks */
     if(sel.length){
-      mhtml+='<div class="info-line"><span class="lbl">昵称</span><div class="tags">';
+      mhtml+='<div class="info-line"><span class="lbl">福利官昵称</span><div class="tags">';
       for(var j=0;j<sel.length;j++){
         mhtml+='<span class="tag" onclick="event.stopPropagation();showOfficerDetail(\''+sel[j].id+'\')">'+esc(sel[j].nick)+'</span>';
       }
@@ -300,7 +300,8 @@ function copyFullText(id){
   var lines=[];
   lines.push('游戏名称：'+(g.game_name||''));
   if(g.customer_link)lines.push('获客链接：'+g.customer_link);
-  if(sel.length)lines.push('昵称：'+sel.map(function(o){return o.nick}).join('、'));
+  if(sel.length)lines.push('福利官昵称：'+sel.map(function(o){return o.nick}).join('、'));
+  if(g.link_params)lines.push('二维码项目参数名：'+g.link_params);
   copyText(lines.join('\n'));
   toast('已复制','ok');
 }
@@ -323,7 +324,7 @@ function showOfficerDetail(oid){
   var pop=$('officerPop');
   var h='<div class="hd"><span>'+(o.seq?'['+esc(o.seq)+'] ':'')+esc(o.nick)+'</span><span class="px" style="cursor:pointer;font-size:20px" onclick="hideOfficerPop()">×</span></div>';
   if(o.seq)h+='<div class="row"><span class="lb">项目序列</span><span>'+esc(o.seq)+'</span></div>';
-  h+='<div class="row"><span class="lb">昵称</span><span>'+esc(o.nick)+'</span></div>';
+  h+='<div class="row"><span class="lb">福利官昵称</span><span>'+esc(o.nick)+'</span></div>';
   if(o.name)h+='<div class="row"><span class="lb">名称</span><span>'+esc(o.name)+'</span></div>';
   if(o.phone)h+='<div class="row"><span class="lb">手机</span><span>'+esc(o.phone)+'</span></div>';
   if(o.wechat)h+='<div class="row"><span class="lb">微信</span><span>'+esc(o.wechat)+'</span></div>';
