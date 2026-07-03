@@ -40,7 +40,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
 /* Table */
 .wt{overflow-x:auto;padding:0 20px 20px}
 table{width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06)}
-th{background:#f8f9fc;padding:12px 14px;text-align:left;font-size:13px;color:var(--t2);font-weight:700;border-bottom:2px solid var(--b);white-space:nowrap;position:sticky;top:0}
+th{background:#f8f9fc;padding:12px 14px;text-align:left;font-size:13px;color:var(--t2);font-weight:700;border-bottom:2px solid var(--b);white-space:nowrap;position:sticky;top:0;user-select:none}
+th .resize-handle{position:absolute;right:0;top:0;bottom:0;width:6px;cursor:col-resize;z-index:5}
+th .resize-handle:hover,th .resize-handle.active{background:var(--p)}
 td{padding:var(--sp) 14px;border-bottom:1px solid #f0f0f0;font-size:14px;vertical-align:top}
 tr:hover{background:#fafbff}
 .nw{white-space:nowrap}.mono{font-family:monospace;font-size:13px;color:var(--t2)}
@@ -137,9 +139,9 @@ tr:hover{background:#fafbff}
     <button class="btn btn-p" id="btnAdd" style="white-space:nowrap">＋ 添加</button>
   </div>
   <div class="wt">
-    <table>
+    <table id="gameTable">
       <thead><tr>
-        <th>游戏名称</th><th>福利官昵称</th><th>福利官名称</th><th>二维码</th><th>获客链接</th><th>链接参数</th><th>备注</th><th>操作</th>
+        <th>游戏名称<div class="resize-handle"></div></th><th>福利官昵称<div class="resize-handle"></div></th><th>福利官名称<div class="resize-handle"></div></th><th>二维码<div class="resize-handle"></div></th><th>获客链接<div class="resize-handle"></div></th><th>链接参数<div class="resize-handle"></div></th><th>备注<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>
       </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
@@ -785,6 +787,7 @@ function render(){
       + '</tr>';
   }
   tbody.innerHTML = html;
+  initColumnResize();
 }
 
 function getGameById(id){
@@ -887,21 +890,24 @@ function renderOfficerLib(){
 }
 
 /* ════════════════════ COLUMN RESIZE ════════════════════ */
+var startX, startWidth, targetCol;
 function initColumnResize(){
-  var table = $('officerTable');
-  if(!table) return;
-  var handles = table.querySelectorAll('.resize-handle');
-  var startX, startWidth, targetCol;
-  handles.forEach(function(handle){
-    handle.addEventListener('mousedown', function(e){
-      e.preventDefault();
-      e.stopPropagation();
-      targetCol = handle.parentElement;
-      startX = e.pageX;
-      startWidth = targetCol.offsetWidth;
-      handle.classList.add('active');
-      document.addEventListener('mousemove', onResizeMove);
-      document.addEventListener('mouseup', onResizeUp);
+  document.querySelectorAll('table').forEach(function(table){
+    var handles = table.querySelectorAll('.resize-handle');
+    if(!handles.length) return;
+    handles.forEach(function(handle){
+      if(handle._bound) return;
+      handle._bound = true;
+      handle.addEventListener('mousedown', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        targetCol = handle.parentElement;
+        startX = e.pageX;
+        startWidth = targetCol.offsetWidth;
+        handle.classList.add('active');
+        document.addEventListener('mousemove', onResizeMove);
+        document.addEventListener('mouseup', onResizeUp);
+      });
     });
   });
 }
