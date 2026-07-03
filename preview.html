@@ -48,6 +48,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
 .ts.ok{background:var(--s);color:#fff}.ts.er{background:var(--d);color:#fff}
 .empty{text-align:center;padding:60px 20px;color:var(--t3)}
 .mono{font-family:monospace;font-size:13px;color:var(--t2)}
+.btn-o{background:#fff;color:var(--t2);border:1.5px solid var(--b)}
+.md label{display:block;font-size:13px;font-weight:600;color:var(--t2);margin-bottom:6px;margin-top:14px}
+.md input,.md textarea,.md select{width:100%;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;outline:none;font-family:inherit;resize:vertical;transition:.2s}
+.md input:focus,.md textarea:focus,.md select:focus{border-color:var(--p)}
+.md .mb{padding:20px 24px}
+.qz{width:100%;min-height:100px;padding:10px;border:2px dashed #d0d5dd;border-radius:10px;text-align:center;cursor:pointer;color:var(--t3);font-size:13px;margin-bottom:10px}
+.qz:hover{border-color:var(--p);color:var(--p)}
 
 /* ═══════════ 桌面/平板：表格布局（和 PC 端一模一样） ═══════════ */
 .wt{overflow-x:auto;padding:0 20px 20px}
@@ -105,6 +112,7 @@ tr:hover{background:#fafbff}
       <span data-sp="12px" id="spM" class="active">M</span>
       <span data-sp="20px" id="spL">L</span>
     </div>
+    <button class="btn btn-p" id="btnAdd" style="white-space:nowrap">＋ 添加</button>
   </div>
 
   <!-- 桌面/平板：表格 -->
@@ -134,6 +142,34 @@ tr:hover{background:#fafbff}
   <div class="mf">
     <button class="btn btn-p" onclick="copyQrImage()">📋 复制图片</button>
     <button class="btn btn-sm" onclick="closeQr()" style="border:1.5px solid #d0d5dd">关闭</button>
+  </div>
+</div>
+</div>
+
+<!-- 添加/编辑弹窗 -->
+<div class="mo" id="editModal">
+<div class="md">
+  <div class="hd"><span id="editTitle">添加游戏</span><span class="x" onclick="closeEdit()">×</span></div>
+  <div class="mb">
+    <input type="hidden" id="editId">
+    <label>游戏名称 *</label><input type="text" id="editGameName" placeholder="例如：王者荣耀">
+    <label>福利官 <span style="color:var(--t3);font-weight:400">（多选）</span></label>
+    <div style="border:1.5px solid #e0e0e0;border-radius:10px;padding:8px;min-height:42px;cursor:pointer;position:relative" id="msw">
+      <div style="display:flex;flex-wrap:wrap;gap:4px" id="mswWrap"><span class="ph" style="color:var(--t3)">点击选择福利官...</span></div>
+      <div style="position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #e0e0e0;border-radius:10px;margin-top:4px;max-height:180px;overflow-y:auto;display:none;z-index:10" id="dd"></div>
+    </div>
+    <label>二维码图片</label>
+    <div class="qz" id="qrZone">📷 点击上传二维码 或 Ctrl+V 粘贴<br><small>支持 jpg/png/gif</small></div>
+    <input type="file" id="qrFileInput" accept="image/*" style="display:none">
+    <input type="text" id="editQrUrl" placeholder="或粘贴图片链接" style="margin-bottom:10px" oninput="updateQrPreview(this.value)">
+    <div id="qrPreviewArea" style="display:none;margin-bottom:10px"><img id="qp" style="max-width:120px;max-height:120px;border-radius:8px"></div>
+    <label>获客链接</label><input type="text" id="editCustomerLink" placeholder="https://...">
+    <label>链接参数</label><textarea id="editLinkParams" placeholder="例如：?channel=xxx&source=yyy" rows="2"></textarea>
+    <label>备注</label><textarea id="editNotes" placeholder="其他备注信息" rows="2"></textarea>
+  </div>
+  <div class="mf">
+    <button class="btn btn-o" onclick="closeEdit()">取消</button>
+    <button class="btn btn-p" id="btnSaveEdit">保存</button>
   </div>
 </div>
 </div>
@@ -201,6 +237,75 @@ function setSpacing(sp){
   if(sp==='20px')$('spL').classList.add('active');
 }
 ['spS','spM','spL'].forEach(function(id){$(id).addEventListener('click',function(){setSpacing(this.getAttribute('data-sp'))})});
+
+var genId=function(){return 'id_'+Date.now().toString(36)+'_'+Math.random().toString(36).substr(2,5)};
+function saveData(arr){localStorage.setItem(PREVIEW_DATA_KEY,JSON.stringify(arr))}
+
+/* ═══════════ ADD / EDIT MODAL ═══════════ */
+var selectedOfficerIds=[];
+function openEditModal(game){
+  selectedOfficerIds=game?(game.officer_ids||[]):[];
+  $('editId').value=game?game.id:'';
+  $('editTitle').textContent=game?'编辑游戏':'添加游戏';
+  $('editGameName').value=game?game.game_name||'':'';
+  $('editQrUrl').value=game?game.qr_url||'':'';
+  $('editCustomerLink').value=game?game.customer_link||'':'';
+  $('editLinkParams').value=game?game.link_params||'':'';
+  $('editNotes').value=game?game.notes||'':'';
+  updateQrPreview($('editQrUrl').value);
+  renderOfficerSelect();
+  $('editModal').classList.add('active');
+  setTimeout(function(){$('editGameName').focus()},100);
+}
+function closeEdit(){$('editModal').classList.remove('active')}
+function renderOfficerSelect(){
+  var wrap=$('mswWrap'),dd=$('dd'),offs=getOfficers();
+  var html='';
+  if(selectedOfficerIds.length===0)html='<span style="color:var(--t3)">点击选择福利官...</span>';
+  else{for(var i=0;i<selectedOfficerIds.length;i++){
+    var o=offs.find(function(x){return x.id===selectedOfficerIds[i]});
+    var nick=o?o.nick:selectedOfficerIds[i];
+    html+='<span class="tag">'+esc(nick)+'<span class="x" data-oid="'+selectedOfficerIds[i]+'" style="margin-left:6px;cursor:pointer;font-weight:700">×</span></span>';
+  }}
+  wrap.innerHTML=html;
+  var xs=wrap.querySelectorAll('.x');
+  for(var j=0;j<xs.length;j++){(function(oid){xs[j].addEventListener('click',function(e){e.stopPropagation();removeOfficer(oid)})})(xs[j].getAttribute('data-oid'))}
+  var dhtml='';
+  if(offs.length===0)dhtml='<div style="padding:12px;color:var(--t3)">暂无福利官</div>';
+  else{for(var k=0;k<offs.length;k++){
+    var s=selectedOfficerIds.indexOf(offs[k].id)>=0?'style="background:#eef2ff;font-weight:700"':'';
+    dhtml+='<div class="oi" data-oid="'+offs[k].id+'" '+s+' style="padding:8px 12px;cursor:pointer;border-radius:8px;display:flex;justify-content:space-between"><span>'+esc(offs[k].nick)+'</span><span style="color:var(--t3);font-size:12px">'+(offs[k].seq||'')+'</span></div>';
+  }}
+  dd.innerHTML=dhtml;
+  var items=dd.querySelectorAll('.oi');
+  for(var m=0;m<items.length;m++){(function(oid){items[m].addEventListener('click',function(e){e.stopPropagation();toggleOfficer(oid)})})(items[m].getAttribute('data-oid'))}
+}
+$('msw').addEventListener('click',function(e){e.stopPropagation();var dd2=$('dd');dd2.style.display=dd2.style.display==='block'?'none':'block'});
+document.addEventListener('click',function(){$('dd').style.display='none'});
+function toggleOfficer(oid){var idx=selectedOfficerIds.indexOf(oid);if(idx>=0)selectedOfficerIds.splice(idx,1);else selectedOfficerIds.push(oid);renderOfficerSelect()}
+function removeOfficer(oid){var idx=selectedOfficerIds.indexOf(oid);if(idx>=0)selectedOfficerIds.splice(idx,1);renderOfficerSelect()}
+
+function updateQrPreview(url){var img=$('qp'),area=$('qrPreviewArea'),hint=$('qrZone');if(url){img.src=url;area.style.display='block';hint.style.display='none'}else{area.style.display='none';hint.style.display='block'}}
+$('qrZone').addEventListener('click',function(){$('qrFileInput').click()});
+$('qrFileInput').addEventListener('change',function(e){var file=e.target.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(ev){$('qp').src=ev.target.result;$('qrPreviewArea').style.display='block';$('qrZone').style.display='none';$('editQrUrl').value=ev.target.result};reader.readAsDataURL(file)});
+document.addEventListener('paste',function(e){
+  if(!$('editModal').classList.contains('active'))return;
+  var items=e.clipboardData&&e.clipboardData.items;if(!items)return;
+  for(var i=0;i<items.length;i++){if(items[i].type.indexOf('image')===0){e.preventDefault();var blob=items[i].getAsFile();var reader=new FileReader();reader.onload=function(ev){$('qp').src=ev.target.result;$('qrPreviewArea').style.display='block';$('qrZone').style.display='none';$('editQrUrl').value=ev.target.result;toast('已粘贴二维码图片','ok')};reader.readAsDataURL(blob);return}}
+});
+$('btnSaveEdit').addEventListener('click',function(){
+  var gameName=$('editGameName').value.trim();
+  if(!gameName){toast('请输入游戏名称','er');return}
+  var id=$('editId').value;
+  var data={id:id||genId(),game_name:gameName,officer_ids:selectedOfficerIds.slice(),qr_url:$('editQrUrl').value.trim(),customer_link:$('editCustomerLink').value.trim(),link_params:$('editLinkParams').value.trim(),notes:$('editNotes').value.trim(),created_at:id?undefined:new Date().toISOString(),updated_at:new Date().toISOString()};
+  var games=getData();
+  if(id){var idx=games.findIndex(function(g){return g.id===id});if(idx>=0){data.created_at=games[idx].created_at;games[idx]=data}else games.push(data)}
+  else{data.created_at=new Date().toISOString();games.push(data)}
+  saveData(games);
+  toast(id?'更新成功':'添加成功','ok');
+  closeEdit();render();
+});
+$('btnAdd').addEventListener('click',function(){openEditModal(null)});
 
 /* ═══════════ RENDER — 桌面表格 + 手机卡片 ═══════════ */
 function render(){
