@@ -112,6 +112,7 @@ tr:hover{background:#fafbff}
       <span data-sp="12px" id="spM" class="active">M</span>
       <span data-sp="20px" id="spL">L</span>
     </div>
+    <button class="btn btn-sm" id="btnSyncUpload" style="white-space:nowrap;border-color:#16a34a;color:#16a34a">📤 同步上传</button>
     <button class="btn btn-p" id="btnAdd" style="white-space:nowrap">＋ 添加</button>
   </div>
 
@@ -172,6 +173,23 @@ tr:hover{background:#fafbff}
     <button class="btn btn-p" id="btnSaveEdit">保存</button>
   </div>
 </div>
+</div>
+
+<!-- GitHub Token 输入弹窗 -->
+<div class="mo" id="gitTokenModal">
+  <div class="md" style="max-width:420px">
+    <div class="hd"><span>🔑 设置 GitHub Token</span><span class="x" onclick="closeGitToken()">×</span></div>
+    <div class="mb">
+      <p style="font-size:13px;color:var(--t2);margin-bottom:10px">需要 GitHub Personal Access Token 才能将手机端数据同步到 GitHub。</p>
+      <p style="font-size:12px;color:var(--t3);margin-bottom:12px">1. 打开 <a href="https://github.com/settings/tokens" target="_blank" style="color:var(--p)">github.com/settings/tokens</a><br>2. 生成 Token → 勾选 <b>repo</b> 权限<br>3. 粘贴到下面</p>
+      <div class="fg"><label>GitHub Token</label><input type="password" id="gitTokenInput" placeholder="ghp_..." autocomplete="off"></div>
+      <div id="gitTokenErr" style="color:var(--d);font-size:13px;margin-top:6px;display:none"></div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-o" onclick="closeGitToken()">取消</button>
+      <button class="btn btn-p" id="btnSaveGitToken">保存并同步</button>
+    </div>
+  </div>
 </div>
 
 <!-- Toast — 和 PC 一致 -->
@@ -455,6 +473,68 @@ function copyQrImage(){
 }
 
 document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeQr();hideOfficerPop()}});
+
+/* ═══════════ GitHub 同步上传（手机端 → PC 端） ═══════════ */
+var GH_TOKEN_KEY='gw_preview_gh_token',GH_REPO='neko1772/welfare-manager',GH_FILE='data.json';
+function getGitToken(){return localStorage.getItem(GH_TOKEN_KEY)||''}
+function closeGitToken(){$('gitTokenModal').classList.remove('active')}
+
+$('btnSaveGitToken').addEventListener('click',function(){
+  var token=$('gitTokenInput').value.trim();
+  if(!token){$('gitTokenErr').textContent='请输入 Token';$('gitTokenErr').style.display='block';return}
+  if(!token.match(/^gh[pousr]_/)){$('gitTokenErr').textContent='Token 格式不正确，应以 ghp_ 或 gho_ 开头';$('gitTokenErr').style.display='block';return}
+  localStorage.setItem(GH_TOKEN_KEY,token);
+  $('gitTokenModal').classList.remove('active');
+  toast('Token 已保存，开始同步...','ok');
+  doSync(token);
+});
+
+function doSync(token){
+  var data={games:getData(),officers:getOfficers()};
+  var content=JSON.stringify(data);
+  var base64=btoa(unescape(encodeURIComponent(content)));
+  var apiBase='https://api.github.com/repos/'+GH_REPO+'/contents/'+GH_FILE;
+  fetch(apiBase,{headers:{'Authorization':'token '+token}})
+    .then(function(r){
+      if(r.status===401)throw Error('Token 无效，请检查权限');
+      return r.json().then(function(j){return{status:r.status,body:j}});
+    })
+    .then(function(res){
+      var sha='';
+      if(res.status===200)sha=res.body.sha;
+      var payload={message:'sync data from mobile',content:base64};
+      if(sha)payload.sha=sha;
+      return fetch(apiBase,{
+        method:'PUT',
+        headers:{'Authorization':'token '+token,'Content-Type':'application/json'},
+        body:JSON.stringify(payload)
+      });
+    })
+    .then(function(r){
+      if(!r.ok)throw Error('GitHub API 返回错误 '+r.status);
+      return r.json();
+    })
+    .then(function(){
+      var dt=new Date().toLocaleString();
+      toast('已同步上传！更新时间：'+dt,'ok');
+    })
+    .catch(function(e){toast(e.message||'同步失败','er')});
+}
+
+$('btnSyncUpload').addEventListener('click',function(){
+  var token=getGitToken();
+  if(token){
+    var btn=$('btnSyncUpload');
+    btn.textContent='⏳ 同步中...';btn.disabled=true;
+    doSync(token);
+    setTimeout(function(){btn.textContent='📤 同步上传';btn.disabled=false},3000);
+    return;
+  }
+  $('gitTokenInput').value='';
+  $('gitTokenErr').style.display='none';
+  $('gitTokenModal').classList.add('active');
+  setTimeout(function(){$('gitTokenInput').focus()},100);
+});
 
 /* Remote data — 加载到独立 key，避免覆盖管理页 */
 function loadRemoteData(cb){

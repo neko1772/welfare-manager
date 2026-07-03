@@ -135,6 +135,7 @@ tr:hover{background:#fafbff}
     <button class="btn-sm pri" id="btnImport">📂 导入</button>
     <button class="btn-sm pri" id="btnExport">📤 导出</button>
     <button class="btn-sm" id="btnSync" style="border-color:#f59e0b;color:#d97706">📱 同步到手机</button>
+    <button class="btn-sm" id="btnPull" style="border-color:#16a34a;color:#16a34a">📥 拉取最新</button>
     <button class="btn-sm" id="btnLogout">退出</button>
     <button class="btn btn-p" id="btnAdd" style="white-space:nowrap">＋ 添加</button>
   </div>
@@ -1326,6 +1327,45 @@ $('btnSync').addEventListener('click', function(){
   $('gitTokenModal').classList.add('active');
   setTimeout(function(){ $('gitTokenInput').focus() }, 100);
 });
+
+/* ════════════════════ PULL FROM GITHUB ════════════════════ */
+function pullFromGitHub(){
+  var token = getGitToken();
+  if(!token){
+    toast('请先设置 GitHub Token（点击「同步到手机」进行设置）','er');
+    return;
+  }
+  var btn = $('btnPull');
+  btn.textContent = '⏳ 拉取中...';
+  btn.disabled = true;
+  var apiBase = 'https://api.github.com/repos/' + GH_REPO + '/contents/' + GH_FILE;
+  fetch(apiBase, { headers: { 'Authorization': 'token ' + token } })
+    .then(function(r){
+      if(!r.ok){
+        if(r.status===401)throw Error('Token 无效，请重新设置');
+        if(r.status===404)throw Error('未找到 data.json，请先同步一次');
+        throw Error('GitHub API 返回错误 ' + r.status);
+      }
+      return r.json();
+    })
+    .then(function(json){
+      var content = decodeURIComponent(escape(atob(json.content)));
+      var data = JSON.parse(content);
+      if(data.games) saveData(data.games);
+      if(data.officers) saveOfficers(data.officers);
+      toast('已拉取最新数据，共 '+data.games.length+' 条游戏','ok');
+      render();
+    })
+    .catch(function(e){
+      toast(e.message || '拉取失败','er');
+    })
+    .finally(function(){
+      btn.textContent = '📥 拉取最新';
+      btn.disabled = false;
+    });
+}
+
+$('btnPull').addEventListener('click', pullFromGitHub);
 
 /* ════════════════════ INIT ════════════════════ */
 init();
