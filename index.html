@@ -782,8 +782,12 @@ function renderOfficerSelect(){
   else {
     for(var k=0;k<offs.length;k++){
       var s = selectedOfficerIds.indexOf(offs[k].id)>=0 ? 'style="background:#eef2ff;font-weight:700"' : '';
-      dhtml += '<div class="oi" data-oid="'+offs[k].id+'" '+s+' style="padding:8px 12px;cursor:pointer;border-radius:8px;display:flex;justify-content:space-between">'
-        + '<span>'+esc(offs[k].nick)+'</span><span style="color:var(--t3);font-size:12px">'+(offs[k].seq||'')+'</span></div>';
+      dhtml += '<div class="oi" data-oid="'+offs[k].id+'" '+s+' style="padding:8px 12px;cursor:pointer;border-radius:8px;display:flex;justify-content:space-between;align-items:center">'
+        + '<span style="font-weight:600">'+esc(offs[k].nick)+'</span>'
+        + '<span style="color:var(--t3);font-size:11px;display:flex;gap:6px;align-items:center">'
+        + (offs[k].phone?'<span>'+esc(offs[k].phone)+'</span>':'')
+        + (offs[k].device?'<span>'+esc(offs[k].device)+'</span>':'')
+        + '</span></div>';
     }
   }
   dd.innerHTML = dhtml;
@@ -805,14 +809,15 @@ function renderSeqList(){
     var oid = selectedOfficerIds[i];
     if(!selectedOfficerSeqs[oid]) selectedOfficerSeqs[oid] = String(i+1);
   }
-  var html = '<label style="margin-top:6px">项目序列 <span style="color:var(--t3);font-weight:400">（默认序号，可修改。纯数字显示为"项目X"）</span></label>';
+  var gameName = $('editGameName').value.trim() || '游戏';
+  var html = '<label style="margin-top:6px">项目序列 <span style="color:var(--t3);font-weight:400">（纯数字会自动拼接游戏名，如 '+esc(gameName)+'1）</span></label>';
   html += '<div style="border:1.5px solid #f0f0f0;border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px">';
   for(var i=0;i<selectedOfficerIds.length;i++){
     var oid = selectedOfficerIds[i];
     var o = offs.find(function(x){return x.id===oid});
     var nick = o ? o.nick : oid;
     var seqVal = selectedOfficerSeqs[oid] || '';
-    var preview = fmtSeq(seqVal);
+    var preview = seqVal ? (/^\d+$/.test(seqVal) ? gameName + seqVal : seqVal) : '';
     html += '<div style="display:flex;align-items:center;gap:8px">'
       + '<span style="min-width:80px;font-weight:600;font-size:13px">'+esc(nick)+'</span>'
       + '<input type="text" data-seq-oid="'+oid+'" value="'+esc(seqVal)+'" placeholder="1" style="width:60px;padding:7px 10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;outline:none;text-align:center">'
@@ -827,8 +832,10 @@ function renderSeqList(){
     inputs[j].addEventListener('input', function(e){
       selectedOfficerSeqs[e.target.getAttribute('data-seq-oid')] = e.target.value;
       // Update preview
+      var v = e.target.value;
+      var p = v ? (/^\d+$/.test(v) ? gameName + v : v) : '';
       var previewSpan = e.target.parentElement.querySelector('span:last-child');
-      if(previewSpan) previewSpan.textContent = '→ ' + fmtSeq(e.target.value);
+      if(previewSpan) previewSpan.textContent = '→ ' + p;
     });
   }
 }
@@ -851,6 +858,10 @@ function removeOfficer(oid){
   if(idx>=0){ selectedOfficerIds.splice(idx,1); delete selectedOfficerSeqs[oid]; }
   renderOfficerSelect();
 }
+// Update seq preview when game name changes
+$('editGameName').addEventListener('input', function(){
+  if(selectedOfficerIds.length>0) renderSeqList();
+});
 
 function updateQrPreview(url){
   var img=$('qp'), area=$('qrPreviewArea'), hint=$('qrZone');
@@ -968,7 +979,7 @@ function render(){
     var sel = (g.officer_ids||[]).map(function(oid){ return offs.find(function(x){return x.id===oid}) }).filter(Boolean);
     var nickTags = sel.map(function(o){
       var sq = seqs[o.id] || '';
-      var seqLabel = sq ? fmtSeq(sq) : '';
+      var seqLabel = sq ? (g.game_name + sq) : '';
       var label = seqLabel ? esc(o.nick)+' <span style="color:#f59e0b;font-size:11px">['+esc(seqLabel)+']</span>' : esc(o.nick);
       return '<span class="tag" style="cursor:pointer" onclick="event.stopPropagation();showOfficerDetail(\''+o.id+'\')">'+label+'</span>';
     }).join('');
@@ -1151,7 +1162,8 @@ function copyFullText(id){
   if(sel.length){
     var nickStr = sel.map(function(o){
       var sq = seqs[o.id];
-      return sq ? (o.nick+'['+fmtSeq(sq)+']') : o.nick;
+      var label = sq ? (/^\d+$/.test(sq) ? (g.game_name+sq) : sq) : '';
+      return label ? (o.nick+'['+label+']') : o.nick;
     }).join('、');
     lines.push('福利官昵称：'+nickStr);
   }
@@ -1505,7 +1517,7 @@ function showProjectOfficers(gameId){
   for(var i=0;i<sel.length;i++){
     var o = sel[i];
     var sq = seqs[o.id] || '';
-    var seqLabel = sq ? fmtSeq(sq) : '';
+    var seqLabel = sq ? (/^\d+$/.test(sq) ? game.game_name + sq : sq) : '';
     listHtml += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f5f5f5">'
       + (seqLabel?'<span style="background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:8px;font-size:12px;font-weight:700;min-width:36px;text-align:center">'+esc(seqLabel)+'</span>':'<span style="min-width:36px"></span>')
       + '<span style="font-weight:600;min-width:60px">'+esc(o.nick)+'</span>'
