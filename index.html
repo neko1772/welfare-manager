@@ -136,12 +136,14 @@ tr:hover{background:#fafbff}
     <button class="btn-sm pri" id="btnExport">📤 导出</button>
     <button class="btn-sm" id="btnSync" style="border-color:#f59e0b;color:#d97706">📱 同步到手机</button>
     <button class="btn-sm" id="btnPull" style="border-color:#16a34a;color:#16a34a">📥 拉取最新</button>
+    <button class="btn-sm pri" id="btnOfficerView">📋 福利官视图</button>
+    <button class="btn-sm" id="btnLaunch" style="border-color:#8b5cf6;color:#7c3aed">🚀 上线计划</button>
     <button class="btn-sm" id="btnLogout">退出</button>
     <button class="btn btn-p" id="btnAdd" style="white-space:nowrap">＋ 添加</button>
   </div>
   <div class="wt">
     <table id="gameTable">
-      <thead><tr>
+      <thead><tr id="gameTableHead">
         <th>游戏名称<div class="resize-handle"></div></th><th>福利官昵称<div class="resize-handle"></div></th><th>福利官名称<div class="resize-handle"></div></th><th>二维码<div class="resize-handle"></div></th><th>获客链接<div class="resize-handle"></div></th><th>链接参数<div class="resize-handle"></div></th><th>备注<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>
       </tr></thead>
       <tbody id="tbody"></tbody>
@@ -162,6 +164,7 @@ tr:hover{background:#fafbff}
       <div style="display:flex;flex-wrap:wrap;gap:4px" id="mswWrap"><span class="ph" style="color:var(--t3)">点击选择福利官...</span></div>
       <div style="position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #e0e0e0;border-radius:10px;margin-top:4px;max-height:180px;overflow-y:auto;display:none;z-index:10" id="dd"></div>
     </div>
+    <div id="seqList" style="margin-top:10px"></div>
     <label>二维码图片</label>
     <div class="qz" id="qrZone">📷 点击上传二维码 或 Ctrl+V 粘贴<br><small>支持 jpg/png/gif</small></div>
     <input type="file" id="qrFileInput" accept="image/*" style="display:none">
@@ -198,7 +201,7 @@ tr:hover{background:#fafbff}
   <div class="hd"><span id="officerEditTitle">添加福利官</span><span class="x" onclick="closeOfficerEdit()">×</span></div>
   <div class="mb">
     <input type="hidden" id="officerEditId">
-    <label>项目序列</label><input type="text" id="officerSeq" placeholder="例如：A001">
+    <label>默认序列 <span style="color:var(--t3);font-weight:400">（可选，项目序列在添加游戏时设置）</span></label><input type="text" id="officerSeq" placeholder="如：A001">
     <label>昵称（对外展示）*</label><input type="text" id="officerNick" placeholder="例如：小福">
     <label>福利官名称</label><input type="text" id="officerName" placeholder="例如：王者福利官">
     <label>手机号</label><input type="text" id="officerPhone" placeholder="手机号">
@@ -309,6 +312,43 @@ A002	小礼	和平福利官	139xxx	wx456	李四	是	iPhone 14'></textarea>
 <!-- 福利官详情弹窗 -->
 <div class="pop" id="officerPop"></div>
 
+<!-- 上线计划弹窗 -->
+<div class="mo" id="launchModal">
+<div class="md" style="max-width:800px">
+  <div class="hd"><span>🚀 新项目上线计划</span><span class="x" onclick="closeLaunch()">×</span></div>
+  <div class="mb">
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+      <button class="btn btn-p" id="btnAddLaunch" style="font-size:13px;padding:8px 16px">＋ 添加上线计划</button>
+      <span style="font-size:13px;color:var(--t3);align-self:center">按上线日期倒序排列（最近即将上线的在最前）</span>
+    </div>
+    <div id="launchList"></div>
+  </div>
+</div>
+</div>
+
+<!-- 添加/编辑上线计划弹窗 -->
+<div class="mo" id="launchEditModal">
+<div class="md" style="max-width:500px">
+  <div class="hd"><span id="launchEditTitle">添加上线计划</span><span class="x" onclick="closeLaunchEdit()">×</span></div>
+  <div class="mb">
+    <input type="hidden" id="launchEditId">
+    <label>项目名称 *</label><input type="text" id="launchProjectName" placeholder="例如：星辰变">
+    <label>上线日期 *</label><input type="date" id="launchDate">
+    <label>对接人</label><input type="text" id="launchContact" placeholder="对接人姓名">
+    <label>分配福利官 <span style="color:var(--t3);font-weight:400">（多选）</span></label>
+    <div style="border:1.5px solid #e0e0e0;border-radius:10px;padding:8px;min-height:42px;cursor:pointer;position:relative" id="launchMsw">
+      <div style="display:flex;flex-wrap:wrap;gap:4px" id="launchMswWrap"><span class="ph" style="color:var(--t3)">点击选择福利官...</span></div>
+      <div style="position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #e0e0e0;border-radius:10px;margin-top:4px;max-height:180px;overflow-y:auto;display:none;z-index:10" id="launchDd"></div>
+    </div>
+    <label>备注</label><textarea id="launchNotes" placeholder="如：下周三上线，需提前配置" rows="2"></textarea>
+  </div>
+  <div class="mf">
+    <button class="btn btn-o" onclick="closeLaunchEdit()">取消</button>
+    <button class="btn btn-p" id="btnSaveLaunch">保存</button>
+  </div>
+</div>
+</div>
+
 <!-- GitHub Token 输入弹窗 -->
 <div class="mo" id="gitTokenModal">
 <div class="md" style="max-width:420px">
@@ -376,6 +416,8 @@ var ADMIN_VERIFY_MINUTES = 5;
 var GH_TOKEN_KEY = 'gw_gh_token';
 var GH_REPO = 'neko1772/welfare-manager';
 var GH_FILE = 'data.json';
+var LAUNCH_KEY = 'gw_launches';
+var LAUNCH_REMINDER_KEY = 'gw_launch_reminded';
 
 /* ════════════════════ HASH ════════════════════ */
 function simpleHash(str){
@@ -433,7 +475,7 @@ function init(){
   }
   var pwd = localStorage.getItem(PWD_KEY);
   if(!pwd) showPage('setup'); else if(hasSession()) showPage('main'); else showPage('login');
-  if(hasSession()) render();
+  if(hasSession()){ render(); checkLaunchReminders(); }
 }
 
 /* ════════════════════ SETUP ════════════════════ */
@@ -581,11 +623,35 @@ function getOfficers(){
   try{ return JSON.parse(localStorage.getItem(OFFICER_KEY)) || [] }catch(e){ return [] }
 }
 function saveOfficers(arr){ localStorage.setItem(OFFICER_KEY, JSON.stringify(arr)) }
+function getLaunches(){
+  try{ return JSON.parse(localStorage.getItem(LAUNCH_KEY)) || [] }catch(e){ return [] }
+}
+function saveLaunches(arr){ localStorage.setItem(LAUNCH_KEY, JSON.stringify(arr)) }
+/* Migration: ensure officer_seqs exists on games */
+function migrateGames(games){
+  var offs = getOfficers();
+  for(var i=0;i<games.length;i++){
+    var g = games[i];
+    if(!g.officer_seqs) g.officer_seqs = {};
+    (g.officer_ids||[]).forEach(function(oid){
+      if(!g.officer_seqs[oid]){
+        var o = offs.find(function(x){return x.id===oid});
+        if(o && o.seq) g.officer_seqs[oid] = o.seq;
+      }
+    });
+  }
+  return games;
+}
 
 /* ════════════════════ OFFICER SELECT (multi) ════════════════════ */
 var selectedOfficerIds = [];
+var selectedOfficerSeqs = {};  // officer_id -> seq string
 function openEditModal(game){
   selectedOfficerIds = game ? (game.officer_ids||[]) : [];
+  selectedOfficerSeqs = {};
+  if(game && game.officer_seqs){
+    selectedOfficerSeqs = JSON.parse(JSON.stringify(game.officer_seqs));
+  }
   $('editId').value = game ? game.id : '';
   $('editTitle').textContent = game ? '编辑游戏' : '添加游戏';
   $('editGameName').value = game ? game.game_name||'' : '';
@@ -635,6 +701,34 @@ function renderOfficerSelect(){
       items[m].addEventListener('click', function(e){ e.stopPropagation(); toggleOfficer(oid) });
     })(items[m].getAttribute('data-oid'));
   }
+  // Render seq input list
+  renderSeqList();
+}
+function renderSeqList(){
+  var offs = getOfficers();
+  var sl = $('seqList');
+  if(selectedOfficerIds.length===0){ sl.innerHTML=''; return; }
+  var html = '<label style="margin-top:6px">项目序列 <span style="color:var(--t3);font-weight:400">（每个福利官在本项目中的序号）</span></label>';
+  html += '<div style="border:1.5px solid #f0f0f0;border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px">';
+  for(var i=0;i<selectedOfficerIds.length;i++){
+    var oid = selectedOfficerIds[i];
+    var o = offs.find(function(x){return x.id===oid});
+    var nick = o ? o.nick : oid;
+    var seqVal = selectedOfficerSeqs[oid] || '';
+    html += '<div style="display:flex;align-items:center;gap:8px">'
+      + '<span style="min-width:80px;font-weight:600;font-size:13px">'+esc(nick)+'</span>'
+      + '<input type="text" data-seq-oid="'+oid+'" value="'+esc(seqVal)+'" placeholder="如：神泣1" style="flex:1;padding:7px 10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;outline:none">'
+      + '</div>';
+  }
+  html += '</div>';
+  sl.innerHTML = html;
+  // Bind input events to update selectedOfficerSeqs
+  var inputs = sl.querySelectorAll('input[data-seq-oid]');
+  for(var j=0;j<inputs.length;j++){
+    inputs[j].addEventListener('input', function(e){
+      selectedOfficerSeqs[e.target.getAttribute('data-seq-oid')] = e.target.value;
+    });
+  }
 }
 $('msw').addEventListener('click', function(e){
   e.stopPropagation();
@@ -646,13 +740,13 @@ document.addEventListener('click', function(){$('dd').style.display='none'});
 
 function toggleOfficer(oid){
   var idx = selectedOfficerIds.indexOf(oid);
-  if(idx>=0) selectedOfficerIds.splice(idx,1);
-  else selectedOfficerIds.push(oid);
+  if(idx>=0){ selectedOfficerIds.splice(idx,1); delete selectedOfficerSeqs[oid]; }
+  else { selectedOfficerIds.push(oid); if(!selectedOfficerSeqs[oid]) selectedOfficerSeqs[oid]=''; }
   renderOfficerSelect();
 }
 function removeOfficer(oid){
   var idx = selectedOfficerIds.indexOf(oid);
-  if(idx>=0) selectedOfficerIds.splice(idx,1);
+  if(idx>=0){ selectedOfficerIds.splice(idx,1); delete selectedOfficerSeqs[oid]; }
   renderOfficerSelect();
 }
 
@@ -705,6 +799,7 @@ $('btnSaveEdit').addEventListener('click', function(){
     id: id || genId(),
     game_name: gameName,
     officer_ids: selectedOfficerIds.slice(),
+    officer_seqs: JSON.parse(JSON.stringify(selectedOfficerSeqs)),
     qr_url: $('editQrUrl').value.trim(),
     customer_link: $('editCustomerLink').value.trim(),
     link_params: $('editLinkParams').value.trim(),
@@ -728,14 +823,20 @@ $('btnSaveEdit').addEventListener('click', function(){
 });
 
 /* ════════════════════ RENDER TABLE ════════════════════ */
+var currentView = 'project';  // 'project' or 'officer'
 function render(){
-  var games = getData();
+  if(currentView==='officer'){ renderOfficerView(); return; }
+  var games = migrateGames(getData());
+  var offs = getOfficers();
   var kw = ($('searchInput').value||'').trim().toLowerCase();
   if(kw){
     games = games.filter(function(g){
       if((g.game_name||'').toLowerCase().indexOf(kw)>=0) return true;
-      var offs = getOfficers();
-      var sel = (g.officer_ids||[]).map(function(oid){ var o=offs.find(function(x){return x.id===oid}); return o?(o.nick+o.name):'' }).join(' ');
+      var seqs = g.officer_seqs||{};
+      var sel = (g.officer_ids||[]).map(function(oid){
+        var o=offs.find(function(x){return x.id===oid});
+        return o?(o.nick+o.name+(o.phone||'')+(o.device||'')+(seqs[oid]||'')):'';
+      }).join(' ');
       return sel.toLowerCase().indexOf(kw)>=0;
     });
   }
@@ -747,12 +848,16 @@ function render(){
     return;
   }
   $('emptyState').style.display='none';
-  var offs = getOfficers();
   var html = '';
   for(var i=0;i<games.length;i++){
     var g = games[i];
+    var seqs = g.officer_seqs||{};
     var sel = (g.officer_ids||[]).map(function(oid){ return offs.find(function(x){return x.id===oid}) }).filter(Boolean);
-    var nickTags = sel.map(function(o){ return '<span class="tag" style="cursor:pointer" onclick="event.stopPropagation();showOfficerDetail(\''+o.id+'\')">'+esc(o.nick)+'</span>' }).join('');
+    var nickTags = sel.map(function(o){
+      var sq = seqs[o.id] || '';
+      var label = sq ? esc(o.nick)+' <span style="color:#f59e0b;font-size:11px">['+esc(sq)+']</span>' : esc(o.nick);
+      return '<span class="tag" style="cursor:pointer" onclick="event.stopPropagation();showOfficerDetail(\''+o.id+'\')">'+label+'</span>';
+    }).join('');
     var nameHtml = '';
     var seenNames = {};
     var uniqueNames = [];
@@ -791,6 +896,98 @@ function render(){
   initColumnResize();
 }
 
+/* ════════════════════ OFFICER VIEW (cross-reference) ════════════════════ */
+function renderOfficerView(){
+  var games = migrateGames(getData());
+  var offs = getOfficers();
+  var kw = ($('searchInput').value||'').trim().toLowerCase();
+  // Build cross-reference rows: each row = 1 officer × 1 project
+  var rows = [];
+  for(var i=0;i<games.length;i++){
+    var g = games[i];
+    var seqs = g.officer_seqs||{};
+    var oids = g.officer_ids||[];
+    for(var j=0;j<oids.length;j++){
+      var o = offs.find(function(x){return x.id===oids[j]});
+      if(!o) continue;
+      rows.push({
+        oid: o.id,
+        nick: o.nick||'',
+        phone: o.phone||'',
+        device: o.device||'',
+        qiyu: o.qiyu||'否',
+        game_name: g.game_name||'',
+        seq: seqs[o.id]||'',
+        game_id: g.id
+      });
+    }
+  }
+  // Also include officers not assigned to any project
+  for(var k=0;k<offs.length;k++){
+    var assigned = games.some(function(g){ return (g.officer_ids||[]).indexOf(offs[k].id)>=0 });
+    if(!assigned){
+      rows.push({
+        oid: offs[k].id, nick: offs[k].nick||'', phone: offs[k].phone||'',
+        device: offs[k].device||'', qiyu: offs[k].qiyu||'否',
+        game_name: '(未分配)', seq: '', game_id: ''
+      });
+    }
+  }
+  // Filter by keyword
+  if(kw){
+    rows = rows.filter(function(r){
+      var blob = (r.nick+r.phone+r.device+r.game_name+r.seq).toLowerCase();
+      return blob.indexOf(kw)>=0;
+    });
+  }
+  // Sort by nick then game_name
+  rows.sort(function(a,b){
+    if(a.nick===b.nick) return a.game_name.localeCompare(b.game_name);
+    return a.nick.localeCompare(b.nick);
+  });
+  $('countLabel').textContent = '共 '+rows.length+' 条（福利官视图）';
+  // Update table header
+  $('gameTableHead').innerHTML = '<th>福利官昵称<div class="resize-handle"></div></th><th>手机号<div class="resize-handle"></div></th><th>设备<div class="resize-handle"></div></th><th>项目名称<div class="resize-handle"></div></th><th>项目序列<div class="resize-handle"></div></th><th>七鱼<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>';
+  var tbody = $('tbody');
+  if(rows.length===0){
+    $('emptyState').style.display='block';
+    tbody.innerHTML='';
+    return;
+  }
+  $('emptyState').style.display='none';
+  var html = '';
+  for(var m=0;m<rows.length;m++){
+    var r = rows[m];
+    html += '<tr>'
+      + '<td style="font-weight:600;cursor:pointer" onclick="showOfficerDetail(\''+r.oid+'\')">'+esc(r.nick)+'</td>'
+      + '<td>'+esc(r.phone||'-')+'</td>'
+      + '<td>'+esc(r.device||'-')+'</td>'
+      + '<td>'+(r.game_id?'<span style="color:var(--p);font-weight:600">'+esc(r.game_name)+'</span>':'<span style="color:var(--t3)">'+esc(r.game_name)+'</span>')+'</td>'
+      + '<td>'+(r.seq?'<span style="background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:8px;font-size:12px;font-weight:700">'+esc(r.seq)+'</span>':'-')+'</td>'
+      + '<td>'+(r.qiyu==='否'?'<span style="color:var(--d)">否</span>':r.qiyu)+'</td>'
+      + '<td class="nw"><button class="btn-sm" onclick="copyText(\''+esc(r.phone)+'\')">📋手机</button></td>'
+      + '</tr>';
+  }
+  tbody.innerHTML = html;
+  initColumnResize();
+}
+
+$('btnOfficerView').addEventListener('click', function(){
+  if(currentView==='officer'){
+    currentView = 'project';
+    $('btnOfficerView').textContent = '📋 福利官视图';
+    $('btnOfficerView').classList.remove('pri');
+    $('btnOfficerView').classList.add('pri');
+    // Restore project table header
+    $('gameTableHead').innerHTML = '<th>游戏名称<div class="resize-handle"></div></th><th>福利官昵称<div class="resize-handle"></div></th><th>福利官名称<div class="resize-handle"></div></th><th>二维码<div class="resize-handle"></div></th><th>获客链接<div class="resize-handle"></div></th><th>链接参数<div class="resize-handle"></div></th><th>备注<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>';
+    render();
+  } else {
+    currentView = 'officer';
+    $('btnOfficerView').textContent = '📋 项目视图';
+    render();
+  }
+});
+
 function getGameById(id){
   var games = getData();
   for(var i=0;i<games.length;i++){ if(games[i].id===id) return games[i]; }
@@ -799,11 +996,18 @@ function getGameById(id){
 function copyFullText(id){
   var g = getGameById(id); if(!g) return;
   var offs = getOfficers();
+  var seqs = g.officer_seqs||{};
   var sel = (g.officer_ids||[]).map(function(oid){ return offs.find(function(x){return x.id===oid}) }).filter(Boolean);
   var lines = [];
   lines.push('游戏名称：'+(g.game_name||''));
   if(g.customer_link) lines.push('获客链接：'+g.customer_link);
-  if(sel.length) lines.push('福利官昵称：'+sel.map(function(o){return o.nick}).join('、'));
+  if(sel.length){
+    var nickStr = sel.map(function(o){
+      var sq = seqs[o.id];
+      return sq ? (o.nick+'['+sq+']') : o.nick;
+    }).join('、');
+    lines.push('福利官昵称：'+nickStr);
+  }
   if(g.link_params) lines.push(g.link_params);
   copyText(lines.join('\n'));
   toast('已复制','ok');
@@ -863,16 +1067,28 @@ function closeOfficerLib(){ $('officerLibModal').classList.remove('active') }
 function closeOfficerEdit(){ $('officerEditModal').classList.remove('active') }
 function renderOfficerLib(){
   var offs = getOfficers();
+  var games = migrateGames(getData());
   var html = '';
   if(offs.length===0) html='<div style="padding:20px;color:var(--t3);text-align:center">暂无福利官，点击「＋ 添加福利官」</div>';
   else {
     html = '<table class="ot" id="officerTable"><thead><tr>'
-      +'<th style="min-width:60px">序列<div class="resize-handle"></div></th><th style="min-width:60px">昵称<div class="resize-handle"></div></th><th style="min-width:80px">名称<div class="resize-handle"></div></th><th style="min-width:80px">手机号<div class="resize-handle"></div></th><th style="min-width:80px">微信<div class="resize-handle"></div></th><th style="min-width:60px">实名<div class="resize-handle"></div></th><th style="min-width:60px">七鱼<div class="resize-handle"></div></th><th style="min-width:80px">设备<div class="resize-handle"></div></th><th style="width:40px;min-width:40px"></th>'
+      +'<th style="min-width:60px">昵称<div class="resize-handle"></div></th><th style="min-width:80px">名称<div class="resize-handle"></div></th><th style="min-width:80px">手机号<div class="resize-handle"></div></th><th style="min-width:80px">微信<div class="resize-handle"></div></th><th style="min-width:60px">实名<div class="resize-handle"></div></th><th style="min-width:60px">七鱼<div class="resize-handle"></div></th><th style="min-width:80px">设备<div class="resize-handle"></div></th><th style="min-width:100px">承接项目<div class="resize-handle"></div></th><th style="width:40px;min-width:40px"></th>'
       +'</tr></thead><tbody>';
     for(var i=0;i<offs.length;i++){
       var o=offs[i];
+      // Find projects for this officer
+      var projHtml = '';
+      var projCount = 0;
+      for(var gi=0;gi<games.length;gi++){
+        var g = games[gi];
+        if((g.officer_ids||[]).indexOf(o.id)>=0){
+          var sq = (g.officer_seqs||{})[o.id]||'';
+          projHtml += '<div style="font-size:12px;line-height:1.6">'+esc(g.game_name)+(sq?' <span style="color:#d97706">['+esc(sq)+']</span>':'')+'</div>';
+          projCount++;
+        }
+      }
+      if(projCount===0) projHtml = '<span style="color:var(--t3)">-</span>';
       html += '<tr onclick="editOfficer(\''+o.id+'\')" style="cursor:pointer">'
-        +'<td>'+(o.seq?esc(o.seq):'-')+'</td>'
         +'<td style="font-weight:600">'+esc(o.nick)+'</td>'
         +'<td>'+esc(o.name||'-')+'</td>'
         +'<td>'+esc(o.phone||'-')+'</td>'
@@ -880,6 +1096,7 @@ function renderOfficerLib(){
         +'<td>'+esc(o.realName||'-')+'</td>'
         +'<td>'+(o.qiyu==='否'?'<span style="color:var(--d);font-weight:600">否</span>':esc(o.qiyu||'否'))+'</td>'
         +'<td>'+esc(o.device||'-')+'</td>'
+        +'<td>'+projHtml+'</td>'
         +'<td class="act"><span class="del" onclick="event.stopPropagation();deleteOfficerLib(\''+o.id+'\')" title="删除">×</span></td>'
         +'</tr>';
     }
@@ -1014,15 +1231,33 @@ function showOfficerDetail(oid){
   }
 
   pop._oid = oid;
-  pop.innerHTML='<div class="hd"><span>'+esc((o.seq?'['+o.seq+'] ':'')+o.nick)+'</span><span class="px" onclick="hideOfficerPop();event.stopPropagation()">×</span></div>'
-    + (o.seq?'<div class="row"><span class="lb">项目序列：</span><span>'+esc(o.seq)+'</span></div>':'')
+  // Find all projects this officer is in
+  var games = migrateGames(getData());
+  var projects = [];
+  for(var gi=0;gi<games.length;gi++){
+    var g = games[gi];
+    if((g.officer_ids||[]).indexOf(oid)>=0){
+      var seqs = g.officer_seqs||{};
+      projects.push({name: g.game_name, seq: seqs[oid]||'', gid: g.id});
+    }
+  }
+  var projHtml = '';
+  if(projects.length>0){
+    projHtml = '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #eee"><div style="font-size:12px;color:var(--t3);margin-bottom:4px">承接项目：</div>';
+    for(var pi=0;pi<projects.length;pi++){
+      projHtml += '<div class="row"><span class="lb">'+esc(projects[pi].name)+'</span><span style="background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:8px;font-size:12px;font-weight:700">'+esc(projects[pi].seq||'-')+'</span></div>';
+    }
+    projHtml += '</div>';
+  }
+  pop.innerHTML='<div class="hd"><span>'+esc(o.nick)+'</span><span class="px" onclick="hideOfficerPop();event.stopPropagation()">×</span></div>'
     + '<div class="row"><span class="lb">福利官昵称：</span><span>'+esc(o.nick)+'</span></div>'
     + (o.name?'<div class="row"><span class="lb">名称：</span><span>'+esc(o.name)+'</span></div>':'')
     + (o.phone?'<div class="row"><span class="lb">手机：</span><span>'+esc(o.phone)+'</span></div>':'')
     + (o.wechat?'<div class="row"><span class="lb">微信：</span><span>'+esc(o.wechat)+'</span></div>':'')
     + (o.realName?'<div class="row"><span class="lb">实名：</span><span>'+esc(o.realName)+'</span></div>':'')
     + (o.qiyu?'<div class="row"><span class="lb">七鱼：</span><span>'+esc(o.qiyu)+'</span></div>':'')
-    + (o.device?'<div class="row"><span class="lb">设备：</span><span>'+esc(o.device)+'</span></div>':'');
+    + (o.device?'<div class="row"><span class="lb">设备：</span><span>'+esc(o.device)+'</span></div>':'')
+    + projHtml;
   pop.style.display='block';
   pop.classList.add('active');
   // Position near click
@@ -1131,13 +1366,14 @@ $('btnDoImport').addEventListener('click', function(){
 $('btnExport').addEventListener('click', function(){
   var games=getData();
   var offs=getOfficers();
+  var launches=getLaunches();
   // Add officer nick names to export for readability
   var exportData = games.map(function(g){
     var obj = JSON.parse(JSON.stringify(g));
     obj.officers = (g.officer_ids||[]).map(function(oid){var o=offs.find(function(x){return x.id===oid});return o?({nick:o.nick,name:o.name}):null}).filter(Boolean);
     return obj;
   });
-  var blob=new Blob([JSON.stringify(exportData,null,2)],{type:'application/json'});
+  var blob=new Blob([JSON.stringify({games:exportData,officers:offs,launches:launches},null,2)],{type:'application/json'});
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   a.download='福利官数据_'+new Date().toISOString().slice(0,10)+'.json';
@@ -1244,9 +1480,225 @@ $('btnAdd').addEventListener('click', function(){openEditModal(null)});
 /* ════════════════════ ESC CLOSE ════════════════════ */
 document.addEventListener('keydown', function(e){
   if(e.key==='Escape'){
-    closeEdit(); closePwdModal(); closeImport(); closeOfficerLib(); closeOfficerEdit(); closeQr(); closeDeleteVerify(); closeGitToken();
+    closeEdit(); closePwdModal(); closeImport(); closeOfficerLib(); closeOfficerEdit(); closeQr(); closeDeleteVerify(); closeGitToken(); closeLaunch(); closeLaunchEdit();
   }
 });
+
+/* ════════════════════ LAUNCH SCHEDULE ════════════════════ */
+var launchSelectedOfficers = [];
+function openLaunch(){
+  renderLaunchList();
+  $('launchModal').classList.add('active');
+}
+function closeLaunch(){ $('launchModal').classList.remove('active') }
+function closeLaunchEdit(){ $('launchEditModal').classList.remove('active') }
+
+function renderLaunchList(){
+  var launches = getLaunches();
+  var offs = getOfficers();
+  var today = new Date();
+  today.setHours(0,0,0,0);
+  // Sort by launch_date ascending (nearest first, future only highlighted)
+  launches.sort(function(a,b){
+    return (a.launch_date||'').localeCompare(b.launch_date||'');
+  });
+  var html = '';
+  if(launches.length===0){
+    html = '<div style="padding:20px;color:var(--t3);text-align:center">暂无上线计划，点击「＋ 添加上线计划」</div>';
+  } else {
+    html = '<table class="ot" id="launchTable"><thead><tr>'
+      +'<th style="min-width:80px">项目名称<div class="resize-handle"></div></th>'
+      +'<th style="min-width:90px">上线日期<div class="resize-handle"></div></th>'
+      +'<th style="min-width:60px">倒计时<div class="resize-handle"></div></th>'
+      +'<th style="min-width:60px">对接人<div class="resize-handle"></div></th>'
+      +'<th style="min-width:100px">分配福利官<div class="resize-handle"></div></th>'
+      +'<th style="min-width:100px">备注<div class="resize-handle"></div></th>'
+      +'<th style="width:80px;min-width:80px">操作<div class="resize-handle"></div></th>'
+      +'</tr></thead><tbody>';
+    for(var i=0;i<launches.length;i++){
+      var l = launches[i];
+      var launchDate = l.launch_date ? new Date(l.launch_date+'T00:00:00') : null;
+      var diffDays = launchDate ? Math.round((launchDate - today) / 86400000) : null;
+      var diffStr = '';
+      var diffColor = '';
+      if(diffDays !== null){
+        if(diffDays === 0){ diffStr = '⏰ 今天上线'; diffColor = '#e53935'; }
+        else if(diffDays === 1){ diffStr = '⏰ 明天上线'; diffColor = '#f59e0b'; }
+        else if(diffDays > 0){ diffStr = diffDays + ' 天后'; diffColor = '#16a34a'; }
+        else { diffStr = '已上线 ' + Math.abs(diffDays) + ' 天前'; diffColor = 'var(--t3)'; }
+      }
+      var officerNames = (l.officer_ids||[]).map(function(oid){
+        var o = offs.find(function(x){return x.id===oid});
+        return o ? o.nick : '';
+      }).filter(Boolean).join('、');
+      html += '<tr onclick="editLaunch(\''+l.id+'\')" style="cursor:pointer">'
+        + '<td style="font-weight:600">'+esc(l.project_name||'')+'</td>'
+        + '<td>'+esc(l.launch_date||'-')+'</td>'
+        + '<td>'+(diffStr?'<span style="color:'+diffColor+';font-weight:700">'+diffStr+'</span>':'-')+'</td>'
+        + '<td>'+esc(l.contact||'-')+'</td>'
+        + '<td>'+esc(officerNames||'-')+'</td>'
+        + '<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis">'+esc(l.notes||'-')+'</td>'
+        + '<td class="act" onclick="event.stopPropagation()"><span class="del" onclick="deleteLaunch(\''+l.id+'\')" title="删除" style="font-size:18px;cursor:pointer">×</span></td>'
+        + '</tr>';
+    }
+    html += '</tbody></table>';
+  }
+  $('launchList').innerHTML = html;
+  initColumnResize();
+}
+
+$('btnLaunch').addEventListener('click', openLaunch);
+$('btnAddLaunch').addEventListener('click', function(){
+  openLaunchEdit(null);
+});
+
+function openLaunchEdit(launch){
+  launchSelectedOfficers = launch ? (launch.officer_ids||[]) : [];
+  $('launchEditId').value = launch ? launch.id : '';
+  $('launchEditTitle').textContent = launch ? '编辑上线计划' : '添加上线计划';
+  $('launchProjectName').value = launch ? (launch.project_name||'') : '';
+  $('launchDate').value = launch ? (launch.launch_date||'') : '';
+  $('launchContact').value = launch ? (launch.contact||'') : '';
+  $('launchNotes').value = launch ? (launch.notes||'') : '';
+  renderLaunchOfficerSelect();
+  $('launchEditModal').classList.add('active');
+  setTimeout(function(){ $('launchProjectName').focus() }, 100);
+}
+
+function renderLaunchOfficerSelect(){
+  var wrap = $('launchMswWrap');
+  var dd = $('launchDd');
+  var offs = getOfficers();
+  var html = '';
+  if(launchSelectedOfficers.length===0) html='<span style="color:var(--t3)">点击选择福利官...</span>';
+  else {
+    for(var i=0;i<launchSelectedOfficers.length;i++){
+      var o = offs.find(function(x){return x.id===launchSelectedOfficers[i]});
+      var nick = o ? o.nick : launchSelectedOfficers[i];
+      html += '<span class="tag">' + esc(nick) + '<span class="x" data-oid="'+launchSelectedOfficers[i]+'" style="margin-left:6px;cursor:pointer;font-weight:700">×</span></span>';
+    }
+  }
+  wrap.innerHTML = html;
+  var xs = wrap.querySelectorAll('.x');
+  for(var j=0;j<xs.length;j++){
+    (function(oid){
+      xs[j].addEventListener('click', function(e){ e.stopPropagation();
+        var idx = launchSelectedOfficers.indexOf(oid);
+        if(idx>=0) launchSelectedOfficers.splice(idx,1);
+        renderLaunchOfficerSelect();
+      });
+    })(xs[j].getAttribute('data-oid'));
+  }
+  var dhtml = '';
+  if(offs.length===0) dhtml='<div style="padding:12px;color:var(--t3)">暂无福利官</div>';
+  else {
+    for(var k=0;k<offs.length;k++){
+      var s = launchSelectedOfficers.indexOf(offs[k].id)>=0 ? 'style="background:#eef2ff;font-weight:700"' : '';
+      dhtml += '<div class="loi" data-oid="'+offs[k].id+'" '+s+' style="padding:8px 12px;cursor:pointer;border-radius:8px">'+esc(offs[k].nick)+'</div>';
+    }
+  }
+  dd.innerHTML = dhtml;
+  var items = dd.querySelectorAll('.loi');
+  for(var m=0;m<items.length;m++){
+    (function(oid){
+      items[m].addEventListener('click', function(e){ e.stopPropagation();
+        var idx = launchSelectedOfficers.indexOf(oid);
+        if(idx>=0) launchSelectedOfficers.splice(idx,1);
+        else launchSelectedOfficers.push(oid);
+        renderLaunchOfficerSelect();
+      });
+    })(items[m].getAttribute('data-oid'));
+  }
+}
+$('launchMsw').addEventListener('click', function(e){
+  e.stopPropagation();
+  var dd = $('launchDd');
+  dd.style.display = dd.style.display==='block' ? 'none' : 'block';
+});
+document.addEventListener('click', function(){ $('launchDd').style.display='none' });
+
+$('btnSaveLaunch').addEventListener('click', function(){
+  var name = $('launchProjectName').value.trim();
+  var date = $('launchDate').value;
+  if(!name){ toast('请输入项目名称','er'); return; }
+  if(!date){ toast('请选择上线日期','er'); return; }
+  var id = $('launchEditId').value;
+  var obj = {
+    id: id || genId(),
+    project_name: name,
+    launch_date: date,
+    contact: $('launchContact').value.trim(),
+    officer_ids: launchSelectedOfficers.slice(),
+    notes: $('launchNotes').value.trim(),
+    created_at: id ? undefined : new Date().toISOString()
+  };
+  var launches = getLaunches();
+  if(id){
+    var idx = launches.findIndex(function(l){return l.id===id});
+    if(idx>=0){ obj.created_at = launches[idx].created_at; launches[idx]=obj; }
+    else launches.push(obj);
+  } else {
+    obj.created_at = new Date().toISOString();
+    launches.push(obj);
+  }
+  saveLaunches(launches);
+  toast(id?'更新成功':'添加成功','ok');
+  closeLaunchEdit();
+  renderLaunchList();
+});
+
+function editLaunch(lid){
+  var launches = getLaunches();
+  var l = launches.find(function(x){return x.id===lid});
+  if(!l) return;
+  openLaunchEdit(l);
+}
+
+function deleteLaunch(lid){
+  if(!confirm('确认删除这条上线计划？')) return;
+  var launches = getLaunches();
+  launches = launches.filter(function(l){return l.id!==lid});
+  saveLaunches(launches);
+  toast('已删除','ok');
+  renderLaunchList();
+}
+
+/* Launch reminder check — called on page load */
+function checkLaunchReminders(){
+  var launches = getLaunches();
+  var today = new Date();
+  today.setHours(0,0,0,0);
+  var tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate()+1);
+  var todayStr = today.toISOString().slice(0,10);
+  var tomorrowStr = tomorrow.toISOString().slice(0,10);
+  var reminded = {};
+  try{ reminded = JSON.parse(localStorage.getItem(LAUNCH_REMINDER_KEY)) || {} }catch(e){}
+  var reminders = [];
+  for(var i=0;i<launches.length;i++){
+    var l = launches[i];
+    if(!l.launch_date) continue;
+    var key1 = l.id + '_' + todayStr + '_pre';
+    var key2 = l.id + '_' + todayStr + '_day';
+    if(l.launch_date === tomorrowStr && !reminded[key1]){
+      reminders.push('⏰ 明天上线：' + (l.project_name||'') + (l.contact ? '（对接人：'+l.contact+'）' : ''));
+      reminded[key1] = true;
+    }
+    if(l.launch_date === todayStr && !reminded[key2]){
+      reminders.push('🚀 今天上线：' + (l.project_name||'') + (l.contact ? '（对接人：'+l.contact+'）' : ''));
+      reminded[key2] = true;
+    }
+  }
+  if(reminders.length>0){
+    localStorage.setItem(LAUNCH_REMINDER_KEY, JSON.stringify(reminded));
+    // Show reminders as toasts (staggered)
+    for(var j=0;j<reminders.length;j++){
+      (function(msg, delay){
+        setTimeout(function(){ toast(msg, 'ok') }, delay);
+      })(reminders[j], j * 800);
+    }
+  }
+}
 
 /* ════════════════════ GITHUB SYNC ════════════════════ */
 function getGitToken(){
@@ -1271,7 +1723,8 @@ $('btnSaveGitToken').addEventListener('click', function(){
 function doSync(token){
   var data = {
     games: getData(),
-    officers: getOfficers()
+    officers: getOfficers(),
+    launches: getLaunches()
   };
   var content = JSON.stringify(data);
   var base64 = btoa(unescape(encodeURIComponent(content)));
@@ -1353,6 +1806,7 @@ function pullFromGitHub(){
       var data = JSON.parse(content);
       if(data.games) saveData(data.games);
       if(data.officers) saveOfficers(data.officers);
+      if(data.launches) saveLaunches(data.launches);
       toast('已拉取最新数据，共 '+data.games.length+' 条游戏','ok');
       render();
     })
