@@ -120,7 +120,7 @@ tr:hover{background:#fafbff}
   <div class="wt" id="tableWrap">
     <table>
       <thead><tr>
-        <th>游戏名称</th><th>福利官昵称</th><th>福利官名称</th><th>二维码</th><th>获客链接</th><th>链接参数</th><th>备注</th><th>操作</th>
+        <th>游戏名称</th><th>版本</th><th>福利官昵称</th><th>福利官名称</th><th>二维码</th><th>获客链接</th><th>链接参数</th><th>备注</th><th>操作</th>
       </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
@@ -154,6 +154,11 @@ tr:hover{background:#fafbff}
   <div class="mb">
     <input type="hidden" id="editId">
     <label>游戏名称 *</label><input type="text" id="editGameName" placeholder="例如：王者荣耀">
+    <label>领取版本 <span style="color:var(--t3);font-weight:400">（选择该游戏使用的福利领取方式版本）</span></label>
+    <select id="editVersionId" style="width:100%;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;outline:none;margin-bottom:4px">
+      <option value="">— 未选择版本 —</option>
+    </select>
+    <div id="versionDesc" style="font-size:12px;color:var(--t3);margin-bottom:4px"></div>
     <label>福利官 <span style="color:var(--t3);font-weight:400">（多选）</span></label>
     <div style="border:1.5px solid #e0e0e0;border-radius:10px;padding:8px;min-height:42px;cursor:pointer;position:relative" id="msw">
       <div style="display:flex;flex-wrap:wrap;gap:4px" id="mswWrap"><span class="ph" style="color:var(--t3)">点击选择福利官...</span></div>
@@ -210,7 +215,7 @@ function copyText(t){
 }
 
 /* Storage — 独立 key，避免覆盖管理页数据 */
-var PWD_KEY='gw_pwd',PREVIEW_DATA_KEY='gw_preview_data',PREVIEW_OFFICER_KEY='gw_preview_officers',SESSION_KEY='gw_session',SESSION_HOURS=4;
+var PWD_KEY='gw_pwd',PREVIEW_DATA_KEY='gw_preview_data',PREVIEW_OFFICER_KEY='gw_preview_officers',PREVIEW_VERSION_KEY='gw_preview_versions',SESSION_KEY='gw_session',SESSION_HOURS=4;
 
 function simpleHash(str){
   var hash=0;
@@ -227,6 +232,8 @@ function hasSession(){
 function pwdNotSet(){return!localStorage.getItem(PWD_KEY)}
 function getData(){try{return JSON.parse(localStorage.getItem(PREVIEW_DATA_KEY))||[]}catch(e){return[]}}
 function getOfficers(){try{return JSON.parse(localStorage.getItem(PREVIEW_OFFICER_KEY))||[]}catch(e){return[]}}
+function getVersions(){try{return JSON.parse(localStorage.getItem(PREVIEW_VERSION_KEY))||[]}catch(e){return[]}}
+function getVersionById(vid){var vs=getVersions();for(var i=0;i<vs.length;i++){if(vs[i].id===vid)return vs[i]}return null}
 function getGameById(id){var games=getData();for(var i=0;i<games.length;i++){if(games[i].id===id)return games[i]}return null}
 
 /* Login */
@@ -270,12 +277,22 @@ function openEditModal(game){
   $('editCustomerLink').value=game?game.customer_link||'':'';
   $('editLinkParams').value=game?game.link_params||'':'';
   $('editNotes').value=game?game.notes||'':'';
+  // Populate version dropdown
+  var vs=getVersions();
+  var verSel=$('editVersionId');
+  var curVer=game?(game.version_id||''):'';
+  var vopts='<option value="">— 未选择版本 —</option>';
+  for(var vi=0;vi<vs.length;vi++){var v=vs[vi];var vsel=curVer===v.id?' selected':'';vopts+='<option value="'+v.id+'"'+vsel+'>'+esc(v.name)+(v.desc?' — '+esc(v.desc):'')+'</option>'}
+  verSel.innerHTML=vopts;
+  updateVersionDesc();
   updateQrPreview($('editQrUrl').value);
   renderOfficerSelect();
   $('editModal').classList.add('active');
   setTimeout(function(){$('editGameName').focus()},100);
 }
 function closeEdit(){$('editModal').classList.remove('active')}
+function updateVersionDesc(){var vid=$('editVersionId').value,v=vid?getVersionById(vid):null,descDiv=$('versionDesc');if(v){descDiv.innerHTML=(v.features||[]).map(function(f){return '<span style="background:#f0f9ff;color:#0369a1;padding:2px 8px;border-radius:8px;font-size:11px;margin:2px;display:inline-block">'+esc(f)+'</span>'}).join('')}else{descDiv.innerHTML=''}}
+$('editVersionId')&&$('editVersionId').addEventListener('change',updateVersionDesc);
 function renderOfficerSelect(){
   var wrap=$('mswWrap'),dd=$('dd'),offs=getOfficers();
   var html='';
@@ -315,7 +332,7 @@ $('btnSaveEdit').addEventListener('click',function(){
   var gameName=$('editGameName').value.trim();
   if(!gameName){toast('请输入游戏名称','er');return}
   var id=$('editId').value;
-  var data={id:id||genId(),game_name:gameName,officer_ids:selectedOfficerIds.slice(),qr_url:$('editQrUrl').value.trim(),customer_link:$('editCustomerLink').value.trim(),link_params:$('editLinkParams').value.trim(),notes:$('editNotes').value.trim(),created_at:id?undefined:new Date().toISOString(),updated_at:new Date().toISOString()};
+  var data={id:id||genId(),game_name:gameName,officer_ids:selectedOfficerIds.slice(),version_id:$('editVersionId').value,qr_url:$('editQrUrl').value.trim(),customer_link:$('editCustomerLink').value.trim(),link_params:$('editLinkParams').value.trim(),notes:$('editNotes').value.trim(),created_at:id?undefined:new Date().toISOString(),updated_at:new Date().toISOString()};
   var games=getData();
   if(id){var idx=games.findIndex(function(g){return g.id===id});if(idx>=0){data.created_at=games[idx].created_at;games[idx]=data}else games.push(data)}
   else{data.created_at=new Date().toISOString();games.push(data)}
@@ -331,6 +348,8 @@ function render(){
   var kw=($('searchInput').value||'').trim().toLowerCase();
   if(kw){games=games.filter(function(g){
     if((g.game_name||'').toLowerCase().indexOf(kw)>=0)return true;
+    var verObj=g.version_id?getVersionById(g.version_id):null;
+    if(verObj&&(verObj.name+' '+verObj.desc).toLowerCase().indexOf(kw)>=0)return true;
     var offs=getOfficers(),sel=(g.officer_ids||[]).map(function(oid){var o=offs.find(function(x){return x.id===oid});return o?(o.nick+o.name):''}).join(' ');
     return sel.toLowerCase().indexOf(kw)>=0;
   })}
@@ -355,8 +374,11 @@ function render(){
     nameHtml=uniqueNames.map(function(o){return'<div style="cursor:pointer;color:var(--p);font-size:13px" onclick="showOfficerDetail(\''+o.id+'\')">'+esc(o.name||'—')+'</div>'}).join('');
     var qrImg=g.qr_url?'<img src="'+esc(g.qr_url)+'" style="width:48px;height:48px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="showQr(\''+esc(g.qr_url)+'\',\''+esc(g.game_name)+'\')">':'—';
     var link=g.customer_link||'',fullLink=link+(g.link_params||'');
+    var verObj=g.version_id?getVersionById(g.version_id):null;
+    var verCell=verObj?'<span style="background:'+verObj.color+'20;color:'+verObj.color+';padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px" title="'+esc(verObj.desc||'')+'">'+esc(verObj.name)+'</span>':'<span style="color:var(--t3);font-size:12px">—</span>';
     thtml+='<tr>'
       +'<td style="font-weight:600">'+esc(g.game_name)+'</td>'
+      +'<td>'+verCell+'</td>'
       +'<td><div class="tags">'+nickTags+'</div></td>'
       +'<td>'+nameHtml+'</td>'
       +'<td>'+qrImg+'</td>'
@@ -382,6 +404,9 @@ function render(){
     mhtml+='<div class="mcard">';
     /* Game name */
     mhtml+='<div class="gn"><span class="dot"></span>'+esc(g.game_name)+'</div>';
+    /* Version tag */
+    var mVerObj=g.version_id?getVersionById(g.version_id):null;
+    if(mVerObj)mhtml+='<div class="info-line"><span class="lbl">版本</span><span class="val"><span style="background:'+mVerObj.color+'20;color:'+mVerObj.color+';padding:2px 10px;border-radius:10px;font-weight:700;font-size:12px">'+esc(mVerObj.name)+'</span> <span style="color:var(--t3);font-size:11px">'+esc(mVerObj.desc||'')+'</span></span></div>';
     /* Officer nicks */
     if(sel.length){
       mhtml+='<div class="info-line"><span class="lbl">福利官昵称</span><div class="tags">';
@@ -422,6 +447,8 @@ function copyFullText(id){
   var sel=(g.officer_ids||[]).map(function(oid){return offs.find(function(x){return x.id===oid})}).filter(Boolean);
   var lines=[];
   lines.push('游戏名称：'+(g.game_name||''));
+  var verObj=g.version_id?getVersionById(g.version_id):null;
+  if(verObj)lines.push('领取版本：'+verObj.name+(verObj.desc?('（'+verObj.desc+'）'):''));
   if(g.customer_link)lines.push('获客链接：'+g.customer_link);
   if(sel.length)lines.push('福利官昵称：'+sel.map(function(o){return o.nick}).join('、'));
   if(g.link_params)lines.push(g.link_params);
@@ -490,7 +517,7 @@ $('btnSaveGitToken').addEventListener('click',function(){
 });
 
 function doSync(token){
-  var data={games:getData(),officers:getOfficers()};
+  var data={games:getData(),officers:getOfficers(),versions:getVersions()};
   var content=JSON.stringify(data);
   var base64=btoa(unescape(encodeURIComponent(content)));
   var apiBase='https://api.github.com/repos/'+GH_REPO+'/contents/'+GH_FILE;
@@ -544,19 +571,31 @@ function loadRemoteData(cb){
       if(json){
         if(json.games)localStorage.setItem(PREVIEW_DATA_KEY,JSON.stringify(json.games));
         if(json.officers)localStorage.setItem(PREVIEW_OFFICER_KEY,JSON.stringify(json.officers));
+        if(json.versions)localStorage.setItem(PREVIEW_VERSION_KEY,JSON.stringify(json.versions));
       }
     })
     .catch(function(){
       /* 远程加载失败：如果 preview 没有数据，回退到管理页的数据 */
-      var pd=localStorage.getItem('gw_data'),po=localStorage.getItem('gw_officers');
-      var curD=localStorage.getItem(PREVIEW_DATA_KEY),curO=localStorage.getItem(PREVIEW_OFFICER_KEY);
+      var pd=localStorage.getItem('gw_data'),po=localStorage.getItem('gw_officers'),pv=localStorage.getItem('gw_versions');
+      var curD=localStorage.getItem(PREVIEW_DATA_KEY),curO=localStorage.getItem(PREVIEW_OFFICER_KEY),curV=localStorage.getItem(PREVIEW_VERSION_KEY);
       if(pd && !curD)localStorage.setItem(PREVIEW_DATA_KEY,pd);
       if(po && !curO)localStorage.setItem(PREVIEW_OFFICER_KEY,po);
+      if(pv && !curV)localStorage.setItem(PREVIEW_VERSION_KEY,pv);
     })
     .finally(function(){cb()});
 }
 
 function boot(){
+  // Init preset versions if none exist
+  if(!localStorage.getItem(PREVIEW_VERSION_KEY)){
+    var now=new Date().toISOString();
+    var presets=[
+      {id:'ver_v1',name:'V1',desc:'纯二维码引导+CDK通码领取',features:['二维码引导','CDK通码'],color:'#3b82f6',created_at:now},
+      {id:'ver_v2',name:'V2',desc:'纯二维码+获客链接+CDK通码',features:['二维码','获客链接','CDK通码'],color:'#16a34a',created_at:now},
+      {id:'ver_v3',name:'V3',desc:'获客静态码+获客链接+福利社小程序推送领取',features:['获客静态码','获客链接','福利社小程序推送'],color:'#8b5cf6',created_at:now}
+    ];
+    localStorage.setItem(PREVIEW_VERSION_KEY,JSON.stringify(presets));
+  }
   if(hasSession()||pwdNotSet()){$('loginPage').classList.remove('active');$('mainPage').classList.add('active');loadRemoteData(function(){render()})}
   else{$('loginPage').classList.add('active')}
 }

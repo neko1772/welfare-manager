@@ -138,13 +138,14 @@ tr:hover{background:#fafbff}
     <button class="btn-sm" id="btnPull" style="border-color:#16a34a;color:#16a34a">📥 拉取最新</button>
     <button class="btn-sm pri" id="btnOfficerView">📋 福利官视图</button>
     <button class="btn-sm" id="btnLaunch" style="border-color:#8b5cf6;color:#7c3aed">🚀 上线计划</button>
+    <button class="btn-sm" id="btnVersion" style="border-color:#0891b2;color:#0891b2">🏷 版本管理</button>
     <button class="btn-sm" id="btnLogout">退出</button>
     <button class="btn btn-p" id="btnAdd" style="white-space:nowrap">＋ 添加</button>
   </div>
   <div class="wt">
     <table id="gameTable">
       <thead><tr id="gameTableHead">
-        <th>游戏名称<div class="resize-handle"></div></th><th>福利官昵称<div class="resize-handle"></div></th><th>福利官名称<div class="resize-handle"></div></th><th>二维码<div class="resize-handle"></div></th><th>获客链接<div class="resize-handle"></div></th><th>链接参数<div class="resize-handle"></div></th><th>上线日期<div class="resize-handle"></div></th><th>备注<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>
+        <th>游戏名称<div class="resize-handle"></div></th><th>版本<div class="resize-handle"></div></th><th>福利官昵称<div class="resize-handle"></div></th><th>福利官名称<div class="resize-handle"></div></th><th>二维码<div class="resize-handle"></div></th><th>获客链接<div class="resize-handle"></div></th><th>链接参数<div class="resize-handle"></div></th><th>上线日期<div class="resize-handle"></div></th><th>备注<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>
       </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
@@ -159,6 +160,11 @@ tr:hover{background:#fafbff}
   <div class="mb">
     <input type="hidden" id="editId">
     <label>游戏名称 *</label><input type="text" id="editGameName" placeholder="例如：王者荣耀">
+    <label>领取版本 <span style="color:var(--t3);font-weight:400">（选择该游戏使用的福利领取方式版本）</span></label>
+    <select id="editVersionId" style="width:100%;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;outline:none;margin-bottom:4px">
+      <option value="">— 未选择版本 —</option>
+    </select>
+    <div id="versionDesc" style="font-size:12px;color:var(--t3);margin-bottom:4px"></div>
     <label>福利官 <span style="color:var(--t3);font-weight:400">（多选）</span></label>
     <div style="border:1.5px solid #e0e0e0;border-radius:10px;padding:8px;min-height:42px;cursor:pointer;position:relative" id="msw">
       <div style="display:flex;flex-wrap:wrap;gap:4px" id="mswWrap"><span class="ph" style="color:var(--t3)">点击选择福利官...</span></div>
@@ -224,9 +230,9 @@ tr:hover{background:#fafbff}
   <div class="hd"><span>📂 导入数据</span><span class="x" onclick="closeImport()">×</span></div>
   <div class="mb">
     <p style="font-size:13px;color:var(--t2);margin-bottom:10px">支持 JSON 数组 或 CSV 格式（可直接从 Excel 复制粘贴）。</p>
-    <p style="font-size:12px;color:var(--t3);margin-bottom:8px">字段：game_name | officer_nicks | qr_url(可空) | customer_link | link_params | notes</p>
-    <textarea id="importText" style="width:100%;min-height:120px;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:13px;outline:none;font-family:inherit;resize:vertical;margin-bottom:12px" placeholder='王者荣耀,小福,https://qr.png,https://game.com,?chan=001,备注
-和平精英,小礼,https://qr.png,https://game.com,?chan=002,'></textarea>
+    <p style="font-size:12px;color:var(--t3);margin-bottom:8px">字段：game_name | officer_nicks | qr_url(可空) | customer_link | link_params | notes | version<br><span style="color:var(--p)">version 填版本名称（如 V1、V2、V3），留空则不标记版本</span></p>
+    <textarea id="importText" style="width:100%;min-height:120px;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:13px;outline:none;font-family:inherit;resize:vertical;margin-bottom:12px" placeholder='王者荣耀,小福,https://qr.png,https://game.com,?chan=001,备注,V2
+和平精英,小礼,https://qr.png,https://game.com,?chan=002,,V3'></textarea>
     <div style="display:flex;gap:10px">
       <button class="btn btn-o" onclick="pasteImport()">📋 从剪贴板粘贴</button>
     </div>
@@ -380,6 +386,40 @@ tr:hover{background:#fafbff}
 </div>
 </div>
 
+<!-- 版本管理弹窗 -->
+<div class="mo" id="versionModal">
+<div class="md" style="max-width:720px">
+  <div class="hd"><span>🏷 领取版本管理</span><span class="x" onclick="closeVersion()">×</span></div>
+  <div class="mb">
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+      <button class="btn btn-p" id="btnAddVersion" style="font-size:13px;padding:8px 16px">＋ 添加版本</button>
+      <span style="font-size:13px;color:var(--t3);align-self:center">管理游戏福利领取方式的不同版本，可对游戏记录进行版本标记</span>
+    </div>
+    <div id="versionList"></div>
+  </div>
+</div>
+</div>
+
+<!-- 添加/编辑版本弹窗 -->
+<div class="mo" id="versionEditModal">
+<div class="md" style="max-width:500px">
+  <div class="hd"><span id="versionEditTitle">添加版本</span><span class="x" onclick="closeVersionEdit()">×</span></div>
+  <div class="mb">
+    <input type="hidden" id="versionEditId">
+    <label>版本名称 *</label><input type="text" id="versionName" placeholder="例如：V1、V2、V3 或自定义名称">
+    <label>版本描述 <span style="color:var(--t3);font-weight:400">（领取方式概述）</span></label><input type="text" id="versionDescInput" placeholder="例如：纯二维码引导+CDK通码领取">
+    <label>领取方式特征 <span style="color:var(--t3);font-weight:400">（用逗号分隔，如：二维码引导,CDK通码）</span></label><input type="text" id="versionFeatures" placeholder="二维码引导,CDK通码">
+    <label>标签颜色</label>
+    <div id="versionColorPicker" style="display:flex;gap:8px;flex-wrap:wrap;padding:4px 0"></div>
+    <input type="hidden" id="versionColor">
+  </div>
+  <div class="mf">
+    <button class="btn btn-o" onclick="closeVersionEdit()">取消</button>
+    <button class="btn btn-p" id="btnSaveVersion">保存</button>
+  </div>
+</div>
+</div>
+
 <!-- Toast 容器 -->
 <div class="tc" id="toastContainer"></div>
 
@@ -420,6 +460,7 @@ var GH_REPO = 'neko1772/welfare-manager';
 var GH_FILE = 'data.json';
 var LAUNCH_KEY = 'gw_launches';
 var LAUNCH_REMINDER_KEY = 'gw_launch_reminded';
+var VERSION_KEY = 'gw_versions';
 
 /* ════════════════════ HASH ════════════════════ */
 function simpleHash(str){
@@ -472,6 +513,7 @@ function clearSession(){
 
 /* ════════════════════ INIT ════════════════════ */
 function init(){
+  initVersions();
   if(!localStorage.getItem(ADMIN_KEY)){
     localStorage.setItem(ADMIN_KEY, simpleHash('79528'));
   }
@@ -629,12 +671,34 @@ function getLaunches(){
   try{ return JSON.parse(localStorage.getItem(LAUNCH_KEY)) || [] }catch(e){ return [] }
 }
 function saveLaunches(arr){ localStorage.setItem(LAUNCH_KEY, JSON.stringify(arr)) }
+/* Versions: predefined + custom */
+function getVersions(){
+  try{ return JSON.parse(localStorage.getItem(VERSION_KEY)) || [] }catch(e){ return [] }
+}
+function saveVersions(arr){ localStorage.setItem(VERSION_KEY, JSON.stringify(arr)) }
+function initVersions(){
+  var vs = getVersions();
+  if(vs.length > 0) return;
+  var now = new Date().toISOString();
+  var presets = [
+    { id:'ver_v1', name:'V1', desc:'纯二维码引导+CDK通码领取', features:['二维码引导','CDK通码'], color:'#3b82f6', created_at:now },
+    { id:'ver_v2', name:'V2', desc:'纯二维码+获客链接+CDK通码', features:['二维码','获客链接','CDK通码'], color:'#16a34a', created_at:now },
+    { id:'ver_v3', name:'V3', desc:'获客静态码+获客链接+福利社小程序推送领取', features:['获客静态码','获客链接','福利社小程序推送'], color:'#8b5cf6', created_at:now }
+  ];
+  saveVersions(presets);
+}
+function getVersionById(vid){
+  var vs = getVersions();
+  for(var i=0;i<vs.length;i++){ if(vs[i].id===vid) return vs[i]; }
+  return null;
+}
 /* Migration: ensure officer_seqs exists on games */
 function migrateGames(games){
   var offs = getOfficers();
   for(var i=0;i<games.length;i++){
     var g = games[i];
     if(!g.officer_seqs) g.officer_seqs = {};
+    if(g.version_id === undefined) g.version_id = '';
     (g.officer_ids||[]).forEach(function(oid){
       if(!g.officer_seqs[oid]){
         var o = offs.find(function(x){return x.id===oid});
@@ -661,12 +725,36 @@ function openEditModal(game){
   $('editCustomerLink').value = game ? game.customer_link||'' : '';
   $('editLinkParams').value = game ? game.link_params||'' : '';
   $('editNotes').value = game ? game.notes||'' : '';
+  // Populate version dropdown
+  var vs = getVersions();
+  var verSel = $('editVersionId');
+  var curVer = game ? (game.version_id||'') : '';
+  var vopts = '<option value="">— 未选择版本 —</option>';
+  for(var vi=0; vi<vs.length; vi++){
+    var v = vs[vi];
+    var vsel = curVer===v.id ? ' selected' : '';
+    vopts += '<option value="'+v.id+'"'+vsel+'>'+esc(v.name)+(v.desc?' — '+esc(v.desc):'')+'</option>';
+  }
+  verSel.innerHTML = vopts;
+  updateVersionDesc();
   updateQrPreview($('editQrUrl').value);
   renderOfficerSelect();
   $('editModal').classList.add('active');
   setTimeout(function(){$('editGameName').focus()},100);
 }
 function closeEdit(){ $('editModal').classList.remove('active') }
+function updateVersionDesc(){
+  var vid = $('editVersionId').value;
+  var v = vid ? getVersionById(vid) : null;
+  var descDiv = $('versionDesc');
+  if(v){
+    var feats = (v.features||[]).map(function(f){ return '<span style="background:#f0f9ff;color:#0369a1;padding:2px 8px;border-radius:8px;font-size:11px;margin:2px;display:inline-block">'+esc(f)+'</span>' }).join('');
+    descDiv.innerHTML = feats;
+  } else {
+    descDiv.innerHTML = '';
+  }
+}
+$('editVersionId') && $('editVersionId').addEventListener('change', updateVersionDesc);
 function renderOfficerSelect(){
   var wrap = $('mswWrap');
   var dd = $('dd');
@@ -812,6 +900,7 @@ $('btnSaveEdit').addEventListener('click', function(){
     game_name: gameName,
     officer_ids: selectedOfficerIds.slice(),
     officer_seqs: JSON.parse(JSON.stringify(selectedOfficerSeqs)),
+    version_id: $('editVersionId').value,
     qr_url: $('editQrUrl').value.trim(),
     customer_link: $('editCustomerLink').value.trim(),
     link_params: $('editLinkParams').value.trim(),
@@ -852,6 +941,8 @@ function render(){
   if(kw){
     games = games.filter(function(g){
       if((g.game_name||'').toLowerCase().indexOf(kw)>=0) return true;
+      var verObj = g.version_id ? getVersionById(g.version_id) : null;
+      if(verObj && (verObj.name+' '+verObj.desc).toLowerCase().indexOf(kw)>=0) return true;
       var seqs = g.officer_seqs||{};
       var sel = (g.officer_ids||[]).map(function(oid){
         var o=offs.find(function(x){return x.id===oid});
@@ -907,8 +998,14 @@ function render(){
       launchCell = '<div style="font-size:13px;font-weight:600">'+esc(launchInfo.launch_date)+'</div>'
         + '<span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;color:'+diffColor+';background:'+diffBg+';'+(diffBg==='transparent'?'border:1px solid #e0e0e0':'')+'">'+diffStr+'</span>';
     }
+    // Version tag
+    var verObj = g.version_id ? getVersionById(g.version_id) : null;
+    var verCell = verObj
+      ? '<span style="background:'+verObj.color+'20;color:'+verObj.color+';padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px" title="'+esc(verObj.desc||'')+'">'+esc(verObj.name)+'</span>'
+      : '<span style="color:var(--t3);font-size:12px">—</span>';
     html += '<tr>'
       + '<td style="font-weight:600">'+esc(g.game_name)+'</td>'
+      + '<td>'+verCell+'</td>'
       + '<td><div class="tags">'+nickTags+'</div></td>'
       + '<td>'+nameHtml+'</td>'
       + '<td>'+qrImg+'</td>'
@@ -1021,7 +1118,7 @@ $('btnOfficerView').addEventListener('click', function(){
     $('btnOfficerView').classList.remove('pri');
     $('btnOfficerView').classList.add('pri');
     // Restore project table header
-    $('gameTableHead').innerHTML = '<th>游戏名称<div class="resize-handle"></div></th><th>福利官昵称<div class="resize-handle"></div></th><th>福利官名称<div class="resize-handle"></div></th><th>二维码<div class="resize-handle"></div></th><th>获客链接<div class="resize-handle"></div></th><th>链接参数<div class="resize-handle"></div></th><th>上线日期<div class="resize-handle"></div></th><th>备注<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>';
+    $('gameTableHead').innerHTML = '<th>游戏名称<div class="resize-handle"></div></th><th>版本<div class="resize-handle"></div></th><th>福利官昵称<div class="resize-handle"></div></th><th>福利官名称<div class="resize-handle"></div></th><th>二维码<div class="resize-handle"></div></th><th>获客链接<div class="resize-handle"></div></th><th>链接参数<div class="resize-handle"></div></th><th>上线日期<div class="resize-handle"></div></th><th>备注<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>';
     render();
   } else {
     currentView = 'officer';
@@ -1042,6 +1139,8 @@ function copyFullText(id){
   var sel = (g.officer_ids||[]).map(function(oid){ return offs.find(function(x){return x.id===oid}) }).filter(Boolean);
   var lines = [];
   lines.push('游戏名称：'+(g.game_name||''));
+  var verObj = g.version_id ? getVersionById(g.version_id) : null;
+  if(verObj) lines.push('领取版本：'+verObj.name+(verObj.desc?('（'+verObj.desc+'）'):''));
   if(g.customer_link) lines.push('获客链接：'+g.customer_link);
   if(sel.length){
     var nickStr = sel.map(function(o){
@@ -1409,7 +1508,8 @@ $('btnDoImport').addEventListener('click', function(){
         qr_url: (cols[2]||'').trim(),
         customer_link: (cols[3]||'').trim(),
         link_params: (cols[4]||'').trim(),
-        notes: (cols[5]||'').trim()
+        notes: (cols[5]||'').trim(),
+        version: (cols[6]||'').trim()
       });
     }
   }
@@ -1435,11 +1535,19 @@ $('btnDoImport').addEventListener('click', function(){
       var exist=offs.find(function(o){return o.nick===x.officer_name||o.name===x.officer_name});
       if(exist) oids=[exist.id];
     }
+    // Resolve version name to version_id
+    var verId = '';
+    if(x.version){
+      var vs = getVersions();
+      var vf = vs.find(function(v){ return v.name.toLowerCase()===x.version.toLowerCase() });
+      if(vf) verId = vf.id;
+    }
     var entry={
       id: x.id||genId(),
       game_name: x.game_name,
       officer_ids: oids,
-      qr_url: x.qr_url||x.qr_code_url||'', 
+      version_id: verId,
+      qr_url: x.qr_url||x.qr_code_url||'',
       customer_link: x.customer_link||'',
       link_params: x.link_params||'',
       notes: x.notes||'',
@@ -1459,13 +1567,14 @@ $('btnExport').addEventListener('click', function(){
   var games=getData();
   var offs=getOfficers();
   var launches=getLaunches();
+  var versions=getVersions();
   // Add officer nick names to export for readability
   var exportData = games.map(function(g){
     var obj = JSON.parse(JSON.stringify(g));
     obj.officers = (g.officer_ids||[]).map(function(oid){var o=offs.find(function(x){return x.id===oid});return o?({nick:o.nick,name:o.name}):null}).filter(Boolean);
     return obj;
   });
-  var blob=new Blob([JSON.stringify({games:exportData,officers:offs,launches:launches},null,2)],{type:'application/json'});
+  var blob=new Blob([JSON.stringify({games:exportData,officers:offs,launches:launches,versions:versions},null,2)],{type:'application/json'});
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   a.download='福利官数据_'+new Date().toISOString().slice(0,10)+'.json';
@@ -1476,9 +1585,11 @@ $('btnExport').addEventListener('click', function(){
 /* ════════════════════ IMPORT TEMPLATE ════════════════════ */
 $('btnDownloadTemplate').addEventListener('click', function(){
   // CSV 模板，Excel 可直接打开
-  var header = 'game_name,officer_nicks,qr_url(可空),customer_link,link_params,notes';
-  var row1 = '王者荣耀,小福,https://example.com/qr1.png,https://game.qq.com/wzry,?channel=test001,测试数据';
-  var row2 = '和平精英,小礼,,https://gp.qq.com,?channel=test002,';
+  var vs = getVersions();
+  var verNames = vs.map(function(v){ return v.name }).join('/');
+  var header = 'game_name,officer_nicks,qr_url(可空),customer_link,link_params,notes,version('+(verNames||'V1/V2/V3')+')';
+  var row1 = '王者荣耀,小福,https://example.com/qr1.png,https://game.qq.com/wzry,?channel=test001,测试数据,V2';
+  var row2 = '和平精英,小礼,,https://gp.qq.com,?channel=test002,,V3';
   var csv = '\uFEFF' + header + '\n' + row1 + '\n' + row2 + '\n';
   var blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
   var a = document.createElement('a');
@@ -1607,7 +1718,7 @@ $('btnAdd').addEventListener('click', function(){openEditModal(null)});
 /* ════════════════════ ESC CLOSE ════════════════════ */
 document.addEventListener('keydown', function(e){
   if(e.key==='Escape'){
-    closeEdit(); closePwdModal(); closeImport(); closeOfficerLib(); closeOfficerEdit(); closeQr(); closeDeleteVerify(); closeGitToken(); closeLaunch(); closeLaunchEdit();
+    closeEdit(); closePwdModal(); closeImport(); closeOfficerLib(); closeOfficerEdit(); closeQr(); closeDeleteVerify(); closeGitToken(); closeLaunch(); closeLaunchEdit(); closeVersion(); closeVersionEdit();
   }
 });
 
@@ -1863,6 +1974,148 @@ function checkLaunchReminders(){
   }
 }
 
+/* ════════════════════ VERSION MANAGEMENT ════════════════════ */
+var VERSION_COLORS = ['#3b82f6','#16a34a','#8b5cf6','#f59e0b','#ec4899','#06b6d4','#ef4444','#6366f1'];
+var versionCurColor = '#3b82f6';
+
+function openVersion(){
+  renderVersionList();
+  $('versionModal').classList.add('active');
+}
+function closeVersion(){ $('versionModal').classList.remove('active') }
+function closeVersionEdit(){ $('versionEditModal').classList.remove('active') }
+
+function renderVersionList(){
+  var vs = getVersions();
+  var games = getData();
+  var html = '';
+  if(vs.length===0){
+    html = '<div style="padding:20px;color:var(--t3);text-align:center">暂无版本，点击「＋ 添加版本」</div>';
+  } else {
+    html = '<table class="ot" id="versionTable"><thead><tr>'
+      +'<th style="min-width:60px">版本<div class="resize-handle"></div></th>'
+      +'<th style="min-width:160px">描述<div class="resize-handle"></div></th>'
+      +'<th style="min-width:160px">领取方式<div class="resize-handle"></div></th>'
+      +'<th style="min-width:60px">使用数<div class="resize-handle"></div></th>'
+      +'<th style="width:80px;min-width:80px">操作<div class="resize-handle"></div></th>'
+      +'</tr></thead><tbody>';
+    for(var i=0;i<vs.length;i++){
+      var v = vs[i];
+      var usageCount = games.filter(function(g){ return g.version_id === v.id }).length;
+      var featHtml = (v.features||[]).map(function(f){
+        return '<span style="background:#f0f9ff;color:#0369a1;padding:2px 8px;border-radius:8px;font-size:11px;margin:2px;display:inline-block">'+esc(f)+'</span>';
+      }).join('');
+      var color = v.color || '#3b82f6';
+      html += '<tr>'
+        + '<td><span style="background:'+color+'20;color:'+color+';padding:4px 12px;border-radius:10px;font-weight:700;font-size:13px">'+esc(v.name)+'</span></td>'
+        + '<td style="font-size:13px">'+esc(v.desc||'-')+'</td>'
+        + '<td>'+featHtml+'</td>'
+        + '<td style="text-align:center;font-weight:700;color:'+(usageCount>0?'var(--p)':'var(--t3)')+'">'+usageCount+'</td>'
+        + '<td class="act" style="white-space:nowrap">'
+        + '<button class="btn-sm" onclick="event.stopPropagation();editVersion(\''+v.id+'\')" style="font-size:12px;padding:4px 10px">编辑</button> '
+        + '<span class="del" onclick="event.stopPropagation();deleteVersion(\''+v.id+'\')" title="删除" style="font-size:18px;cursor:pointer">×</span>'
+        + '</td>'
+        + '</tr>';
+    }
+    html += '</tbody></table>';
+  }
+  $('versionList').innerHTML = html;
+  initColumnResize();
+}
+
+$('btnVersion').addEventListener('click', openVersion);
+$('btnAddVersion').addEventListener('click', function(){ openVersionEdit(null) });
+
+function openVersionEdit(ver){
+  $('versionEditId').value = ver ? ver.id : '';
+  $('versionEditTitle').textContent = ver ? '编辑版本' : '添加版本';
+  $('versionName').value = ver ? (ver.name||'') : '';
+  $('versionDescInput').value = ver ? (ver.desc||'') : '';
+  $('versionFeatures').value = ver ? (ver.features||[]).join(',') : '';
+  versionCurColor = ver ? (ver.color||'#3b82f6') : '#3b82f6';
+  $('versionColor').value = versionCurColor;
+  // Render color picker
+  var cpHtml = '';
+  for(var i=0;i<VERSION_COLORS.length;i++){
+    var c = VERSION_COLORS[i];
+    var sel = c===versionCurColor ? 'box-shadow:0 0 0 3px '+c+'40;border-color:'+c : 'border-color:#ddd';
+    cpHtml += '<div data-color="'+c+'" style="width:30px;height:30px;border-radius:50%;background:'+c+';cursor:pointer;border:2px solid '+sel.split(';')[1].split(':')[1].trim()+';'+sel+'" onclick="pickVersionColor(\''+c+'\')"></div>';
+  }
+  $('versionColorPicker').innerHTML = cpHtml;
+  $('versionEditModal').classList.add('active');
+  setTimeout(function(){ $('versionName').focus() }, 100);
+}
+
+function pickVersionColor(c){
+  versionCurColor = c;
+  $('versionColor').value = c;
+  // Update visual
+  var dots = $('versionColorPicker').children;
+  for(var i=0;i<dots.length;i++){
+    var dc = dots[i].getAttribute('data-color');
+    if(dc===c){ dots[i].style.borderColor = c; dots[i].style.boxShadow = '0 0 0 3px '+c+'40'; }
+    else { dots[i].style.borderColor = '#ddd'; dots[i].style.boxShadow = 'none'; }
+  }
+}
+
+function editVersion(vid){
+  var v = getVersionById(vid);
+  if(!v) return;
+  openVersionEdit(v);
+}
+
+function deleteVersion(vid){
+  var v = getVersionById(vid);
+  if(!v) return;
+  var games = getData();
+  var usageCount = games.filter(function(g){ return g.version_id === vid }).length;
+  var msg = '确认删除版本「'+v.name+'」？';
+  if(usageCount>0) msg += '\n有 '+usageCount+' 个游戏正在使用此版本，删除后这些游戏将变为未标记版本。';
+  if(!confirm(msg)) return;
+  requireAdmin(function(){
+    var vs = getVersions();
+    vs = vs.filter(function(x){ return x.id!==vid });
+    saveVersions(vs);
+    // Clear version_id from games
+    var changed = false;
+    for(var i=0;i<games.length;i++){
+      if(games[i].version_id === vid){ games[i].version_id = ''; changed = true; }
+    }
+    if(changed) saveData(games);
+    toast('版本已删除','ok');
+    renderVersionList();
+    render();
+  });
+}
+
+$('btnSaveVersion').addEventListener('click', function(){
+  var name = $('versionName').value.trim();
+  if(!name){ toast('请输入版本名称','er'); return; }
+  var id = $('versionEditId').value;
+  var features = $('versionFeatures').value.split(/[,，]/).map(function(s){return s.trim()}).filter(function(s){return s});
+  var obj = {
+    id: id || genId(),
+    name: name,
+    desc: $('versionDescInput').value.trim(),
+    features: features,
+    color: versionCurColor,
+    created_at: id ? undefined : new Date().toISOString()
+  };
+  var vs = getVersions();
+  if(id){
+    var idx = vs.findIndex(function(x){ return x.id===id });
+    if(idx>=0){ obj.created_at = vs[idx].created_at; vs[idx] = obj; }
+    else vs.push(obj);
+  } else {
+    obj.created_at = new Date().toISOString();
+    vs.push(obj);
+  }
+  saveVersions(vs);
+  toast(id?'版本已更新':'版本已添加','ok');
+  closeVersionEdit();
+  renderVersionList();
+});
+
 /* ════════════════════ GITHUB SYNC ════════════════════ */
 function getGitToken(){
   return localStorage.getItem(GH_TOKEN_KEY) || '';
@@ -1887,7 +2140,8 @@ function doSync(token){
   var data = {
     games: getData(),
     officers: getOfficers(),
-    launches: getLaunches()
+    launches: getLaunches(),
+    versions: getVersions()
   };
   var content = JSON.stringify(data);
   var base64 = btoa(unescape(encodeURIComponent(content)));
@@ -1970,6 +2224,8 @@ function pullFromGitHub(){
       if(data.games) saveData(data.games);
       if(data.officers) saveOfficers(data.officers);
       if(data.launches) saveLaunches(data.launches);
+      if(data.versions) saveVersions(data.versions);
+      else initVersions();
       toast('已拉取最新数据，共 '+data.games.length+' 条游戏','ok');
       render();
     })
