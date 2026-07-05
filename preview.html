@@ -309,7 +309,7 @@ function renderOfficerSelect(){
   if(offs.length===0)dhtml='<div style="padding:12px;color:var(--t3)">暂无福利官</div>';
   else{for(var k=0;k<offs.length;k++){
     var s=selectedOfficerIds.indexOf(offs[k].id)>=0?'style="background:#eef2ff;font-weight:700"':'';
-    dhtml+='<div class="oi" data-oid="'+offs[k].id+'" '+s+' style="padding:8px 12px;cursor:pointer;border-radius:8px;display:flex;justify-content:space-between"><span>'+esc(offs[k].nick)+'</span><span style="color:var(--t3);font-size:12px">'+(offs[k].seq||'')+'</span></div>';
+    dhtml+='<div class="oi" data-oid="'+offs[k].id+'" '+s+' style="padding:8px 12px;cursor:pointer;border-radius:8px;display:flex;justify-content:space-between;align-items:center"><span style="font-weight:600">'+esc(offs[k].nick)+'</span><span style="color:var(--t3);font-size:11px;display:flex;gap:6px;align-items:center">'+(offs[k].phone?'<span>'+esc(offs[k].phone)+'</span>':'')+(offs[k].device?'<span>'+esc(offs[k].device)+'</span>':'')+'</span></div>';
   }}
   dd.innerHTML=dhtml;
   var items=dd.querySelectorAll('.oi');
@@ -368,7 +368,8 @@ function render(){
   for(var i=0;i<games.length;i++){
     var g=games[i];
     var sel=(g.officer_ids||[]).map(function(oid){return offs.find(function(x){return x.id===oid})}).filter(Boolean);
-    var nickTags=sel.map(function(o){return'<span class="tag" style="cursor:pointer" onclick="event.stopPropagation();showOfficerDetail(\''+o.id+'\')">'+esc(o.nick)+'</span>'}).join('');
+    var seqs=g.officer_seqs||{};
+    var nickTags=sel.map(function(o){var sq=seqs[o.id]||'';var sl=sq?(/^\d+$/.test(sq)?g.game_name+sq:sq):'';return'<span class="tag" style="cursor:pointer" onclick="event.stopPropagation();showOfficerDetail(\''+o.id+'\')">'+esc(o.nick)+(sl?' <span style="color:#f59e0b;font-size:11px">['+esc(sl)+']</span>':'')+'</span>'}).join('');
     var nameHtml='',seenNames={},uniqueNames=[];
     for(var j=0;j<sel.length;j++){var nm=sel[j].name||'—';if(!seenNames[nm]){seenNames[nm]=true;uniqueNames.push(sel[j])}}
     nameHtml=uniqueNames.map(function(o){return'<div style="cursor:pointer;color:var(--p);font-size:13px" onclick="showOfficerDetail(\''+o.id+'\')">'+esc(o.name||'—')+'</div>'}).join('');
@@ -450,7 +451,11 @@ function copyFullText(id){
   var verObj=g.version_id?getVersionById(g.version_id):null;
   if(verObj)lines.push('领取版本：'+verObj.name+(verObj.desc?('（'+verObj.desc+'）'):''));
   if(g.customer_link)lines.push('获客链接：'+g.customer_link);
-  if(sel.length)lines.push('福利官昵称：'+sel.map(function(o){return o.nick}).join('、'));
+  if(sel.length){
+    var seqs=g.officer_seqs||{};
+    var nickStr=sel.map(function(o){var sq=seqs[o.id];var sl=sq?(/^\d+$/.test(sq)?g.game_name+sq:sq):'';return sl?(o.nick+'['+sl+']'):o.nick}).join('、');
+    lines.push('福利官昵称：'+nickStr);
+  }
   if(g.link_params)lines.push(g.link_params);
   copyText(lines.join('\n'));
   toast('已复制','ok');
@@ -472,8 +477,7 @@ function showOfficerDetail(oid){
   for(var i=0;i<offs.length;i++){if(offs[i].id===oid){o=offs[i];break}}
   if(!o)return;
   var pop=$('officerPop');
-  var h='<div class="hd"><span>'+(o.seq?'['+esc(o.seq)+'] ':'')+esc(o.nick)+'</span><span class="px" style="cursor:pointer;font-size:20px" onclick="hideOfficerPop()">×</span></div>';
-  if(o.seq)h+='<div class="row"><span class="lb">项目序列</span><span>'+esc(o.seq)+'</span></div>';
+  var h='<div class="hd"><span>'+esc(o.nick)+'</span><span class="px" style="cursor:pointer;font-size:20px" onclick="hideOfficerPop()">×</span></div>';
   h+='<div class="row"><span class="lb">福利官昵称</span><span>'+esc(o.nick)+'</span></div>';
   if(o.name)h+='<div class="row"><span class="lb">名称</span><span>'+esc(o.name)+'</span></div>';
   if(o.phone)h+='<div class="row"><span class="lb">手机</span><span>'+esc(o.phone)+'</span></div>';
@@ -481,6 +485,22 @@ function showOfficerDetail(oid){
   if(o.realName)h+='<div class="row"><span class="lb">实名</span><span>'+esc(o.realName)+'</span></div>';
   if(o.qiyu)h+='<div class="row"><span class="lb">七鱼</span><span>'+esc(o.qiyu)+'</span></div>';
   if(o.device)h+='<div class="row"><span class="lb">设备</span><span>'+esc(o.device)+'</span></div>';
+  /* Show projects */
+  var games=getData();
+  var projs=[];
+  for(var i=0;i<games.length;i++){
+    var g=games[i];
+    if((g.officer_ids||[]).indexOf(o.id)>=0){
+      var sq=(g.officer_seqs||{})[o.id]||'';
+      var dn=sq?(/^\d+$/.test(sq)?g.game_name+sq:g.game_name+'('+sq+')'):g.game_name;
+      projs.push(dn);
+    }
+  }
+  if(projs.length>0){
+    h+='<div class="row" style="flex-direction:column;align-items:flex-start"><span class="lb">承接项目</span><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">';
+    for(var j=0;j<projs.length;j++){h+='<span style="background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:8px;font-size:12px;font-weight:700">'+esc(projs[j])+'</span>'}
+    h+='</div></div>';
+  }
   pop.innerHTML=h;pop.classList.add('active');officerPopVisible=true;
 }
 function hideOfficerPop(){$('officerPop').classList.remove('active');officerPopVisible=false}
