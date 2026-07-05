@@ -244,10 +244,10 @@ tr:hover{background:#fafbff}
   <div class="hd"><span>📥 福利官批量导入</span><span class="x" onclick="closeOfficerImport()">×</span></div>
   <div class="mb">
     <p style="font-size:13px;color:var(--t2);margin-bottom:10px">支持 Excel 复制粘贴（制表符）或 CSV 格式。也可以 <a href="#" onclick="downloadOfficerTemplate();return false" style="color:var(--p);text-decoration:underline">下载 CSV 模板</a> 填好后复制粘贴。</p>
-    <p style="font-size:12px;color:var(--t3);margin-bottom:8px">字段顺序：seq（项目序列）| nick（昵称）| name（名称）| phone | wechat | realName | qiyu | device</p>
+    <p style="font-size:12px;color:var(--t3);margin-bottom:8px">字段顺序：nick | name | phone | wechat | realName | qiyu | device | project_seqs<br><span style="color:var(--p)">project_seqs 格式：游戏名:序号，多个用逗号分隔（如 神泣:1,星辰变:3）</span></p>
     <textarea id="officerImportText" style="width:100%;min-height:120px;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:13px;outline:none;font-family:inherit;resize:vertical;margin-bottom:12px"
-      placeholder='A001	小福	王者福利官	138xxx	wx123	张三	否	iPhone 13
-A002	小礼	和平福利官	139xxx	wx456	李四	是	iPhone 14'></textarea>
+      placeholder='小福	王者福利官	138xxx	wx123	张三	否	iPhone 13	神泣:1
+小礼	和平福利官	139xxx	wx456	李四	是	iPhone 14	神泣:2,星辰变:1'></textarea>
     <div style="display:flex;gap:10px">
       <button class="btn btn-o" onclick="pasteOfficerImport()">📋 从剪贴板粘贴</button>
       <button class="btn btn-o" onclick="downloadOfficerTemplate()">📥 下载模板</button>
@@ -710,16 +710,23 @@ function renderSeqList(){
   var offs = getOfficers();
   var sl = $('seqList');
   if(selectedOfficerIds.length===0){ sl.innerHTML=''; return; }
-  var html = '<label style="margin-top:6px">项目序列 <span style="color:var(--t3);font-weight:400">（每个福利官在本项目中的序号）</span></label>';
+  // Auto-fill sequential numbers for empty seqs
+  for(var i=0;i<selectedOfficerIds.length;i++){
+    var oid = selectedOfficerIds[i];
+    if(!selectedOfficerSeqs[oid]) selectedOfficerSeqs[oid] = String(i+1);
+  }
+  var html = '<label style="margin-top:6px">项目序列 <span style="color:var(--t3);font-weight:400">（默认序号，可修改。纯数字显示为"项目X"）</span></label>';
   html += '<div style="border:1.5px solid #f0f0f0;border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px">';
   for(var i=0;i<selectedOfficerIds.length;i++){
     var oid = selectedOfficerIds[i];
     var o = offs.find(function(x){return x.id===oid});
     var nick = o ? o.nick : oid;
     var seqVal = selectedOfficerSeqs[oid] || '';
+    var preview = fmtSeq(seqVal);
     html += '<div style="display:flex;align-items:center;gap:8px">'
       + '<span style="min-width:80px;font-weight:600;font-size:13px">'+esc(nick)+'</span>'
-      + '<input type="text" data-seq-oid="'+oid+'" value="'+esc(seqVal)+'" placeholder="如：神泣1" style="flex:1;padding:7px 10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;outline:none">'
+      + '<input type="text" data-seq-oid="'+oid+'" value="'+esc(seqVal)+'" placeholder="1" style="width:60px;padding:7px 10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;outline:none;text-align:center">'
+      + '<span style="font-size:12px;color:#d97706;font-weight:700">→ '+esc(preview)+'</span>'
       + '</div>';
   }
   html += '</div>';
@@ -729,6 +736,9 @@ function renderSeqList(){
   for(var j=0;j<inputs.length;j++){
     inputs[j].addEventListener('input', function(e){
       selectedOfficerSeqs[e.target.getAttribute('data-seq-oid')] = e.target.value;
+      // Update preview
+      var previewSpan = e.target.parentElement.querySelector('span:last-child');
+      if(previewSpan) previewSpan.textContent = '→ ' + fmtSeq(e.target.value);
     });
   }
 }
@@ -865,7 +875,8 @@ function render(){
     var sel = (g.officer_ids||[]).map(function(oid){ return offs.find(function(x){return x.id===oid}) }).filter(Boolean);
     var nickTags = sel.map(function(o){
       var sq = seqs[o.id] || '';
-      var label = sq ? esc(o.nick)+' <span style="color:#f59e0b;font-size:11px">['+esc(sq)+']</span>' : esc(o.nick);
+      var seqLabel = sq ? fmtSeq(sq) : '';
+      var label = seqLabel ? esc(o.nick)+' <span style="color:#f59e0b;font-size:11px">['+esc(seqLabel)+']</span>' : esc(o.nick);
       return '<span class="tag" style="cursor:pointer" onclick="event.stopPropagation();showOfficerDetail(\''+o.id+'\')">'+label+'</span>';
     }).join('');
     var nameHtml = '';
@@ -922,58 +933,52 @@ function render(){
   initColumnResize();
 }
 
-/* ════════════════════ OFFICER VIEW (cross-reference) ════════════════════ */
+/* ════════════════════ OFFICER VIEW (one row per officer) ════════════════════ */
+/* seq display helper: pure number → "项目X" */
+function fmtSeq(sq){
+  if(!sq) return '';
+  if(/^\d+$/.test(sq)) return '项目'+sq;
+  return sq;
+}
 function renderOfficerView(){
   var games = migrateGames(getData());
   var offs = getOfficers();
   var kw = ($('searchInput').value||'').trim().toLowerCase();
-  // Build cross-reference rows: each row = 1 officer × 1 project
+  // Build one row per officer
   var rows = [];
-  for(var i=0;i<games.length;i++){
-    var g = games[i];
-    var seqs = g.officer_seqs||{};
-    var oids = g.officer_ids||[];
-    for(var j=0;j<oids.length;j++){
-      var o = offs.find(function(x){return x.id===oids[j]});
-      if(!o) continue;
-      rows.push({
-        oid: o.id,
-        nick: o.nick||'',
-        phone: o.phone||'',
-        device: o.device||'',
-        qiyu: o.qiyu||'否',
-        game_name: g.game_name||'',
-        seq: seqs[o.id]||'',
-        game_id: g.id
-      });
+  for(var i=0;i<offs.length;i++){
+    var o = offs[i];
+    var projList = [];
+    for(var gi=0;gi<games.length;gi++){
+      var g = games[gi];
+      if((g.officer_ids||[]).indexOf(o.id)>=0){
+        var sq = (g.officer_seqs||{})[o.id]||'';
+        projList.push({game_name: g.game_name||'', seq: sq, game_id: g.id});
+      }
     }
-  }
-  // Also include officers not assigned to any project
-  for(var k=0;k<offs.length;k++){
-    var assigned = games.some(function(g){ return (g.officer_ids||[]).indexOf(offs[k].id)>=0 });
-    if(!assigned){
-      rows.push({
-        oid: offs[k].id, nick: offs[k].nick||'', phone: offs[k].phone||'',
-        device: offs[k].device||'', qiyu: offs[k].qiyu||'否',
-        game_name: '(未分配)', seq: '', game_id: ''
-      });
-    }
+    rows.push({
+      oid: o.id,
+      nick: o.nick||'',
+      name: o.name||'',
+      phone: o.phone||'',
+      device: o.device||'',
+      qiyu: o.qiyu||'否',
+      projects: projList
+    });
   }
   // Filter by keyword
   if(kw){
     rows = rows.filter(function(r){
-      var blob = (r.nick+r.phone+r.device+r.game_name+r.seq).toLowerCase();
+      var projBlob = r.projects.map(function(p){return p.game_name+p.seq}).join(' ');
+      var blob = (r.nick+r.name+r.phone+r.device+projBlob).toLowerCase();
       return blob.indexOf(kw)>=0;
     });
   }
-  // Sort by nick then game_name
-  rows.sort(function(a,b){
-    if(a.nick===b.nick) return a.game_name.localeCompare(b.game_name);
-    return a.nick.localeCompare(b.nick);
-  });
-  $('countLabel').textContent = '共 '+rows.length+' 条（福利官视图）';
+  // Sort by nick
+  rows.sort(function(a,b){ return a.nick.localeCompare(b.nick) });
+  $('countLabel').textContent = '共 '+rows.length+' 个福利官（福利官视图）';
   // Update table header
-  $('gameTableHead').innerHTML = '<th>福利官昵称<div class="resize-handle"></div></th><th>手机号<div class="resize-handle"></div></th><th>设备<div class="resize-handle"></div></th><th>项目名称<div class="resize-handle"></div></th><th>项目序列<div class="resize-handle"></div></th><th>七鱼<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>';
+  $('gameTableHead').innerHTML = '<th>福利官昵称<div class="resize-handle"></div></th><th>手机号<div class="resize-handle"></div></th><th>设备<div class="resize-handle"></div></th><th>承接项目<div class="resize-handle"></div></th><th>七鱼<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>';
   var tbody = $('tbody');
   if(rows.length===0){
     $('emptyState').style.display='block';
@@ -984,13 +989,24 @@ function renderOfficerView(){
   var html = '';
   for(var m=0;m<rows.length;m++){
     var r = rows[m];
+    var projHtml = '';
+    if(r.projects.length===0){
+      projHtml = '<span style="color:var(--t3)">未分配</span>';
+    } else {
+      var parts = [];
+      for(var pi=0;pi<r.projects.length;pi++){
+        var p = r.projects[pi];
+        var seqLabel = p.seq ? fmtSeq(p.seq) : '';
+        parts.push('<div style="font-size:12px;line-height:1.7">'+esc(p.game_name)+(seqLabel?' <span style="color:#d97706;font-weight:700">['+esc(seqLabel)+']</span>':'')+'</div>');
+      }
+      projHtml = '<div style="display:inline-block">'+parts.join('')+'</div>';
+    }
     html += '<tr>'
       + '<td style="font-weight:600;cursor:pointer" onclick="showOfficerDetail(\''+r.oid+'\')">'+esc(r.nick)+'</td>'
       + '<td>'+esc(r.phone||'-')+'</td>'
       + '<td>'+esc(r.device||'-')+'</td>'
-      + '<td>'+(r.game_id?'<span style="color:var(--p);font-weight:600">'+esc(r.game_name)+'</span>':'<span style="color:var(--t3)">'+esc(r.game_name)+'</span>')+'</td>'
-      + '<td>'+(r.seq?'<span style="background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:8px;font-size:12px;font-weight:700">'+esc(r.seq)+'</span>':'-')+'</td>'
-      + '<td>'+(r.qiyu==='否'?'<span style="color:var(--d)">否</span>':r.qiyu)+'</td>'
+      + '<td>'+projHtml+'</td>'
+      + '<td>'+(r.qiyu==='否'?'<span style="color:var(--d)">否</span>':esc(r.qiyu))+'</td>'
       + '<td class="nw"><button class="btn-sm" onclick="copyText(\''+esc(r.phone)+'\')">📋手机</button></td>'
       + '</tr>';
   }
@@ -1010,7 +1026,7 @@ $('btnOfficerView').addEventListener('click', function(){
   } else {
     currentView = 'officer';
     $('btnOfficerView').textContent = '📋 项目视图';
-    render();
+    renderOfficerView();
   }
 });
 
@@ -1030,7 +1046,7 @@ function copyFullText(id){
   if(sel.length){
     var nickStr = sel.map(function(o){
       var sq = seqs[o.id];
-      return sq ? (o.nick+'['+sq+']') : o.nick;
+      return sq ? (o.nick+'['+fmtSeq(sq)+']') : o.nick;
     }).join('、');
     lines.push('福利官昵称：'+nickStr);
   }
@@ -1109,7 +1125,8 @@ function renderOfficerLib(){
         var g = games[gi];
         if((g.officer_ids||[]).indexOf(o.id)>=0){
           var sq = (g.officer_seqs||{})[o.id]||'';
-          projHtml += '<div style="font-size:12px;line-height:1.6">'+esc(g.game_name)+(sq?' <span style="color:#d97706">['+esc(sq)+']</span>':'')+'</div>';
+          var seqLabel = sq ? fmtSeq(sq) : '';
+          projHtml += '<div style="font-size:12px;line-height:1.6">'+esc(g.game_name)+(seqLabel?' <span style="color:#d97706;font-weight:700">['+esc(seqLabel)+']</span>':'')+'</div>';
           projCount++;
         }
       }
@@ -1271,7 +1288,7 @@ function showOfficerDetail(oid){
   if(projects.length>0){
     projHtml = '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #eee"><div style="font-size:12px;color:var(--t3);margin-bottom:4px">承接项目：</div>';
     for(var pi=0;pi<projects.length;pi++){
-      projHtml += '<div class="row"><span class="lb">'+esc(projects[pi].name)+'</span><span style="background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:8px;font-size:12px;font-weight:700">'+esc(projects[pi].seq||'-')+'</span></div>';
+      projHtml += '<div class="row"><span class="lb">'+esc(projects[pi].name)+'</span><span style="background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:8px;font-size:12px;font-weight:700">'+esc(fmtSeq(projects[pi].seq)||'-')+'</span></div>';
     }
     projHtml += '</div>';
   }
@@ -1320,8 +1337,9 @@ function showProjectOfficers(gameId){
   for(var i=0;i<sel.length;i++){
     var o = sel[i];
     var sq = seqs[o.id] || '';
+    var seqLabel = sq ? fmtSeq(sq) : '';
     listHtml += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f5f5f5">'
-      + (sq?'<span style="background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:8px;font-size:12px;font-weight:700;min-width:36px;text-align:center">'+esc(sq)+'</span>':'<span style="min-width:36px"></span>')
+      + (seqLabel?'<span style="background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:8px;font-size:12px;font-weight:700;min-width:36px;text-align:center">'+esc(seqLabel)+'</span>':'<span style="min-width:36px"></span>')
       + '<span style="font-weight:600;min-width:60px">'+esc(o.nick)+'</span>'
       + (o.phone?'<span style="color:var(--t3);font-size:12px">'+esc(o.phone)+'</span>':'')
       + (o.device?'<span style="color:var(--t3);font-size:12px;margin-left:auto">'+esc(o.device)+'</span>':'')
@@ -1483,8 +1501,8 @@ function pasteOfficerImport(){
   }
 }
 function downloadOfficerTemplate(){
-  var csv = 'seq,nick,name,phone,wechat,realName,qiyu,device\nA001,小福,王者福利官,13800138000,wx001,张三,否,iPhone 13\nA002,小礼,和平福利官,13900139000,wx002,李四,是,iPhone 14\n';
-  var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  var csv = 'nick,name,phone,wechat,realName,qiyu,device,project_seqs\n小福,王者福利官,13800138000,wx001,张三,否,iPhone 13,神泣:1\n小礼,和平福利官,13900139000,wx002,李四,是,iPhone 14,神泣:2,星辰变:1\n';
+  var blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
   a.href = url;
@@ -1508,21 +1526,21 @@ function parseOfficerImport(t){
   // 第一行如果是标题行则跳过
   var start = 0;
   var first = lines[0].split(sep);
-  if(first[0].toLowerCase().indexOf('seq')>=0 || first[1].toLowerCase().indexOf('nick')>=0 || first[1].toLowerCase().indexOf('昵称')>=0){
+  if(first[0].toLowerCase().indexOf('nick')>=0 || first[0].toLowerCase().indexOf('昵称')>=0){
     start = 1;
   }
   var out = [];
   for(var i=start;i<lines.length;i++){
     var cols = lines[i].split(sep);
     out.push({
-      seq: (cols[0]||'').trim(),
-      nick: (cols[1]||'').trim(),
-      name: (cols[2]||'').trim(),
-      phone: (cols[3]||'').trim(),
-      wechat: (cols[4]||'').trim(),
-      realName: (cols[5]||'').trim(),
-      qiyu: (cols[6]||'否').trim(),
-      device: (cols[7]||'').trim()
+      nick: (cols[0]||'').trim(),
+      name: (cols[1]||'').trim(),
+      phone: (cols[2]||'').trim(),
+      wechat: (cols[3]||'').trim(),
+      realName: (cols[4]||'').trim(),
+      qiyu: (cols[5]||'否').trim(),
+      device: (cols[6]||'').trim(),
+      project_seqs: (cols[7]||'').trim()
     });
   }
   return out;
@@ -1535,14 +1553,49 @@ $('btnDoOfficerImport').addEventListener('click', function(){
   if(arr===null){toast('JSON 格式错误，请检查','er');return}
   if(!Array.isArray(arr) || arr.length===0){toast('未解析到有效数据，请检查格式','er');return}
   var offs=getOfficers();
+  var games=migrateGames(getData());
+  var assignedCount=0;
   for(var i=0;i<arr.length;i++){
     var x=arr[i];
-    offs.push({id:genId(), seq:x.seq||'', nick:x.nick||'', name:x.name||'', phone:x.phone||'', wechat:x.wechat||'', realName:x.realName||'', qiyu:x.qiyu||'否', device:x.device||''});
+    var newId=genId();
+    offs.push({id:newId, nick:x.nick||'', name:x.name||'', phone:x.phone||'', wechat:x.wechat||'', realName:x.realName||'', qiyu:x.qiyu||'否', device:x.device||''});
+    // Parse project_seqs: "神泣:1,星辰变:3"
+    if(x.project_seqs){
+      var pairs=x.project_seqs.split(/[，,]/);
+      for(var pi=0;pi<pairs.length;pi++){
+        var pair=pairs[pi].trim();
+        if(!pair) continue;
+        var colonIdx=pair.lastIndexOf(':');
+        if(colonIdx<0) colonIdx=pair.lastIndexOf('：');
+        if(colonIdx<0) continue;
+        var gameName=pair.substring(0,colonIdx).trim();
+        var seqVal=pair.substring(colonIdx+1).trim();
+        if(!gameName||!seqVal) continue;
+        // Find game by name
+        var game=null;
+        for(var gi=0;gi<games.length;gi++){
+          if(games[gi].game_name===gameName){ game=games[gi]; break; }
+        }
+        if(game){
+          if((game.officer_ids||[]).indexOf(newId)<0){
+            game.officer_ids=game.officer_ids||[];
+            game.officer_ids.push(newId);
+          }
+          game.officer_seqs=game.officer_seqs||{};
+          game.officer_seqs[newId]=seqVal;
+          assignedCount++;
+        }
+      }
+    }
   }
   saveOfficers(offs);
-  toast('成功导入 '+arr.length+' 个福利官','ok');
+  saveData(games);
+  var msg='成功导入 '+arr.length+' 个福利官';
+  if(assignedCount>0) msg+='，自动分配 '+assignedCount+' 个项目序列';
+  toast(msg,'ok');
   closeOfficerImport();
   closeOfficerLib();
+  render();
 });
 
 /* ════════════════════ SEARCH ════════════════════ */
