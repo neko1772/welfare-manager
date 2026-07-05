@@ -43,6 +43,9 @@ table{width:100%;border-collapse:collapse;background:var(--card);border-radius:1
 th{background:#f8f9fc;padding:12px 14px;text-align:left;font-size:13px;color:var(--t2);font-weight:700;border-bottom:2px solid var(--b);white-space:nowrap;position:sticky;top:0;user-select:none}
 th .resize-handle{position:absolute;right:0;top:0;bottom:0;width:6px;cursor:col-resize;z-index:5}
 th .resize-handle:hover,th .resize-handle.active{background:var(--p)}
+th .sort-btn{display:inline-flex;align-items:center;justify-content:center;cursor:pointer;margin-left:4px;padding:1px 4px;border-radius:4px;font-size:13px;color:var(--t3);vertical-align:middle;user-select:none;transition:.15s}
+th .sort-btn:hover{background:#e8eaf0;color:var(--p)}
+th .sort-btn.active{color:var(--p);font-weight:800}
 td{padding:var(--sp) 14px;border-bottom:1px solid #f0f0f0;font-size:14px;vertical-align:top}
 tr:hover{background:#fafbff}
 .nw{white-space:nowrap}.mono{font-family:monospace;font-size:13px;color:var(--t2)}
@@ -144,7 +147,7 @@ tr:hover{background:#fafbff}
   <div class="wt">
     <table id="gameTable">
       <thead><tr id="gameTableHead">
-        <th>游戏名称<div class="resize-handle"></div></th><th>版本<div class="resize-handle"></div></th><th>福利官昵称<div class="resize-handle"></div></th><th>福利官名称<div class="resize-handle"></div></th><th>二维码<div class="resize-handle"></div></th><th>获客链接<div class="resize-handle"></div></th><th>链接参数<div class="resize-handle"></div></th><th>上线日期<div class="resize-handle"></div></th><th>备注<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>
+        <th>游戏名称<div class="resize-handle"></div></th><th>版本<span class="sort-btn" data-col="version" onclick="event.stopPropagation();toggleSort('version')">⇅</span><div class="resize-handle"></div></th><th>福利官昵称<div class="resize-handle"></div></th><th>福利官名称<div class="resize-handle"></div></th><th>二维码<div class="resize-handle"></div></th><th>获客链接<div class="resize-handle"></div></th><th>链接参数<div class="resize-handle"></div></th><th>上线日期<span class="sort-btn" data-col="launch" onclick="event.stopPropagation();toggleSort('launch')">⇅</span><div class="resize-handle"></div></th><th>备注<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>
       </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
@@ -938,6 +941,34 @@ $('btnSaveEdit').addEventListener('click', function(){
 
 /* ════════════════════ RENDER TABLE ════════════════════ */
 var currentView = 'project';  // 'project' or 'officer'
+var sortState = { col: null, dir: null };  // col: 'version'|'launch', dir: 'asc'|'desc'|null
+
+function toggleSort(col){
+  if(sortState.col !== col){
+    sortState.col = col;
+    sortState.dir = 'asc';
+  } else {
+    if(sortState.dir === 'asc') sortState.dir = 'desc';
+    else if(sortState.dir === 'desc'){ sortState.col = null; sortState.dir = null; }
+    else sortState.dir = 'asc';
+  }
+  render();
+}
+
+function updateSortIndicators(){
+  var btns = document.querySelectorAll('th .sort-btn');
+  for(var i=0;i<btns.length;i++){
+    var b = btns[i];
+    var col = b.getAttribute('data-col');
+    if(sortState.col === col && sortState.dir){
+      b.classList.add('active');
+      b.textContent = sortState.dir === 'asc' ? '↑' : '↓';
+    } else {
+      b.classList.remove('active');
+      b.textContent = '⇅';
+    }
+  }
+}
 function render(){
   if(currentView==='officer'){ renderOfficerView(); return; }
   var games = migrateGames(getData());
@@ -965,6 +996,25 @@ function render(){
     });
   }
   $('countLabel').textContent = '共 '+games.length+' 条';
+  // Apply sorting
+  if(sortState.col && sortState.dir){
+    games.sort(function(a,b){
+      var va, vb;
+      if(sortState.col === 'version'){
+        var vaObj = a.version_id ? getVersionById(a.version_id) : null;
+        var vbObj = b.version_id ? getVersionById(b.version_id) : null;
+        va = vaObj ? vaObj.name : '\uffff';
+        vb = vbObj ? vbObj.name : '\uffff';
+      } else if(sortState.col === 'launch'){
+        var la = launchMap[a.id], lb = launchMap[b.id];
+        va = (la && la.launch_date) ? la.launch_date : '9999-12-31';
+        vb = (lb && lb.launch_date) ? lb.launch_date : '9999-12-31';
+      }
+      if(va < vb) return sortState.dir === 'asc' ? -1 : 1;
+      if(va > vb) return sortState.dir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }
   var tbody = $('tbody');
   if(games.length===0){
     $('emptyState').style.display='block';
@@ -1041,6 +1091,7 @@ function render(){
   }
   tbody.innerHTML = html;
   initColumnResize();
+  updateSortIndicators();
 }
 
 /* ════════════════════ OFFICER VIEW (one row per officer) ════════════════════ */
@@ -1135,7 +1186,7 @@ $('btnOfficerView').addEventListener('click', function(){
     $('btnOfficerView').classList.remove('pri');
     $('btnOfficerView').classList.add('pri');
     // Restore project table header
-    $('gameTableHead').innerHTML = '<th>游戏名称<div class="resize-handle"></div></th><th>版本<div class="resize-handle"></div></th><th>福利官昵称<div class="resize-handle"></div></th><th>福利官名称<div class="resize-handle"></div></th><th>二维码<div class="resize-handle"></div></th><th>获客链接<div class="resize-handle"></div></th><th>链接参数<div class="resize-handle"></div></th><th>上线日期<div class="resize-handle"></div></th><th>备注<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>';
+    $('gameTableHead').innerHTML = '<th>游戏名称<div class="resize-handle"></div></th><th>版本<span class="sort-btn" data-col="version" onclick="event.stopPropagation();toggleSort(\'version\')">⇅</span><div class="resize-handle"></div></th><th>福利官昵称<div class="resize-handle"></div></th><th>福利官名称<div class="resize-handle"></div></th><th>二维码<div class="resize-handle"></div></th><th>获客链接<div class="resize-handle"></div></th><th>链接参数<div class="resize-handle"></div></th><th>上线日期<span class="sort-btn" data-col="launch" onclick="event.stopPropagation();toggleSort(\'launch\')">⇅</span><div class="resize-handle"></div></th><th>备注<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>';
     render();
   } else {
     currentView = 'officer';
