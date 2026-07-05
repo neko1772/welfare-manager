@@ -144,7 +144,7 @@ tr:hover{background:#fafbff}
   <div class="wt">
     <table id="gameTable">
       <thead><tr id="gameTableHead">
-        <th>游戏名称<div class="resize-handle"></div></th><th>福利官昵称<div class="resize-handle"></div></th><th>福利官名称<div class="resize-handle"></div></th><th>二维码<div class="resize-handle"></div></th><th>获客链接<div class="resize-handle"></div></th><th>链接参数<div class="resize-handle"></div></th><th>备注<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>
+        <th>游戏名称<div class="resize-handle"></div></th><th>福利官昵称<div class="resize-handle"></div></th><th>福利官名称<div class="resize-handle"></div></th><th>二维码<div class="resize-handle"></div></th><th>获客链接<div class="resize-handle"></div></th><th>链接参数<div class="resize-handle"></div></th><th>上线日期<div class="resize-handle"></div></th><th>备注<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>
       </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
@@ -332,10 +332,12 @@ A002	小礼	和平福利官	139xxx	wx456	李四	是	iPhone 14'></textarea>
   <div class="hd"><span id="launchEditTitle">添加上线计划</span><span class="x" onclick="closeLaunchEdit()">×</span></div>
   <div class="mb">
     <input type="hidden" id="launchEditId">
-    <label>项目名称 *</label><input type="text" id="launchProjectName" placeholder="例如：星辰变">
+    <label>选择游戏记录 *</label>
+    <select id="launchGameSelect" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;margin-bottom:12px">
+      <option value="">— 请选择已添加的游戏 —</option>
+    </select>
     <label>上线日期 *</label><input type="date" id="launchDate">
-    <label>对接人</label><input type="text" id="launchContact" placeholder="对接人姓名">
-    <label>分配福利官 <span style="color:var(--t3);font-weight:400">（多选）</span></label>
+    <label>分配福利官 <span style="color:var(--t3);font-weight:400">（多选，可留空使用游戏记录中已选福利官）</span></label>
     <div style="border:1.5px solid #e0e0e0;border-radius:10px;padding:8px;min-height:42px;cursor:pointer;position:relative" id="launchMsw">
       <div style="display:flex;flex-wrap:wrap;gap:4px" id="launchMswWrap"><span class="ph" style="color:var(--t3)">点击选择福利官...</span></div>
       <div style="position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #e0e0e0;border-radius:10px;margin-top:4px;max-height:180px;overflow-y:auto;display:none;z-index:10" id="launchDd"></div>
@@ -828,6 +830,14 @@ function render(){
   if(currentView==='officer'){ renderOfficerView(); return; }
   var games = migrateGames(getData());
   var offs = getOfficers();
+  var launches = getLaunches();
+  // Build a map: game_id → launch info
+  var launchMap = {};
+  for(var li=0;li<launches.length;li++){
+    if(launches[li].game_id) launchMap[launches[li].game_id] = launches[li];
+  }
+  var today = new Date();
+  today.setHours(0,0,0,0);
   var kw = ($('searchInput').value||'').trim().toLowerCase();
   if(kw){
     games = games.filter(function(g){
@@ -871,6 +881,20 @@ function render(){
     var qrImg = g.qr_url ? '<img src="'+esc(g.qr_url)+'" style="width:48px;height:48px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="showQr(\''+esc(g.qr_url)+'\',\''+esc(g.game_name)+'\')">' : '—';
     var link = g.customer_link||'';
     var fullLink = link+(g.link_params||'');
+    // Launch date cell
+    var launchInfo = launchMap[g.id];
+    var launchCell = '—';
+    if(launchInfo && launchInfo.launch_date){
+      var launchDate = new Date(launchInfo.launch_date+'T00:00:00');
+      var diffDays = Math.round((launchDate - today) / 86400000);
+      var diffStr = '', diffColor = '', diffBg = '';
+      if(diffDays === 0){ diffStr = '⏰今天'; diffColor = '#fff'; diffBg = '#e53935'; }
+      else if(diffDays === 1){ diffStr = '⏰明天'; diffColor = '#fff'; diffBg = '#f59e0b'; }
+      else if(diffDays > 0){ diffStr = diffDays+'天后'; diffColor = '#16a34a'; diffBg = '#f0fdf4'; }
+      else { diffStr = '已上线'+Math.abs(diffDays)+'天'; diffColor = 'var(--t3)'; diffBg = 'transparent'; }
+      launchCell = '<div style="font-size:13px;font-weight:600">'+esc(launchInfo.launch_date)+'</div>'
+        + '<span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;color:'+diffColor+';background:'+diffBg+';'+(diffBg==='transparent'?'border:1px solid #e0e0e0':'')+'">'+diffStr+'</span>';
+    }
     html += '<tr>'
       + '<td style="font-weight:600">'+esc(g.game_name)+'</td>'
       + '<td><div class="tags">'+nickTags+'</div></td>'
@@ -878,6 +902,7 @@ function render(){
       + '<td>'+qrImg+'</td>'
       + '<td>'+(link?'<span class="mono" style="max-width:160px;display:inline-block;overflow:hidden;text-overflow:ellipsis">'+esc(link)+'</span>':'—')+'</td>'
       + '<td><span class="mono">'+(g.link_params||'—')+'</span></td>'
+      + '<td>'+launchCell+'</td>'
       + '<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis">'+esc(g.notes||'—')+'</td>'
       + '<td class="nw">'
         + '<div style="display:flex;flex-wrap:wrap;gap:4px">'
@@ -979,7 +1004,7 @@ $('btnOfficerView').addEventListener('click', function(){
     $('btnOfficerView').classList.remove('pri');
     $('btnOfficerView').classList.add('pri');
     // Restore project table header
-    $('gameTableHead').innerHTML = '<th>游戏名称<div class="resize-handle"></div></th><th>福利官昵称<div class="resize-handle"></div></th><th>福利官名称<div class="resize-handle"></div></th><th>二维码<div class="resize-handle"></div></th><th>获客链接<div class="resize-handle"></div></th><th>链接参数<div class="resize-handle"></div></th><th>备注<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>';
+    $('gameTableHead').innerHTML = '<th>游戏名称<div class="resize-handle"></div></th><th>福利官昵称<div class="resize-handle"></div></th><th>福利官名称<div class="resize-handle"></div></th><th>二维码<div class="resize-handle"></div></th><th>获客链接<div class="resize-handle"></div></th><th>链接参数<div class="resize-handle"></div></th><th>上线日期<div class="resize-handle"></div></th><th>备注<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>';
     render();
   } else {
     currentView = 'officer';
@@ -1496,6 +1521,7 @@ function closeLaunchEdit(){ $('launchEditModal').classList.remove('active') }
 function renderLaunchList(){
   var launches = getLaunches();
   var offs = getOfficers();
+  var games = getData();
   var today = new Date();
   today.setHours(0,0,0,0);
   // Sort by launch_date ascending (nearest first, future only highlighted)
@@ -1510,13 +1536,15 @@ function renderLaunchList(){
       +'<th style="min-width:80px">项目名称<div class="resize-handle"></div></th>'
       +'<th style="min-width:90px">上线日期<div class="resize-handle"></div></th>'
       +'<th style="min-width:60px">倒计时<div class="resize-handle"></div></th>'
-      +'<th style="min-width:60px">对接人<div class="resize-handle"></div></th>'
       +'<th style="min-width:100px">分配福利官<div class="resize-handle"></div></th>'
       +'<th style="min-width:100px">备注<div class="resize-handle"></div></th>'
       +'<th style="width:80px;min-width:80px">操作<div class="resize-handle"></div></th>'
       +'</tr></thead><tbody>';
     for(var i=0;i<launches.length;i++){
       var l = launches[i];
+      // Look up game name from game_id, fallback to project_name for old data
+      var game = l.game_id ? games.find(function(g){return g.id===l.game_id}) : null;
+      var projName = game ? game.game_name : (l.project_name || '(已删除)');
       var launchDate = l.launch_date ? new Date(l.launch_date+'T00:00:00') : null;
       var diffDays = launchDate ? Math.round((launchDate - today) / 86400000) : null;
       var diffStr = '';
@@ -1531,11 +1559,18 @@ function renderLaunchList(){
         var o = offs.find(function(x){return x.id===oid});
         return o ? o.nick : '';
       }).filter(Boolean).join('、');
+      // If no officer_ids but game exists, use game's officers
+      if(!officerNames && game && game.officer_ids){
+        officerNames = (game.officer_ids||[]).map(function(oid){
+          var o = offs.find(function(x){return x.id===oid});
+          return o ? o.nick : '';
+        }).filter(Boolean).join('、');
+      }
+      var nameStyle = game ? 'font-weight:600' : 'font-weight:600;color:var(--t3)';
       html += '<tr onclick="editLaunch(\''+l.id+'\')" style="cursor:pointer">'
-        + '<td style="font-weight:600">'+esc(l.project_name||'')+'</td>'
+        + '<td style="'+nameStyle+'">'+esc(projName)+'</td>'
         + '<td>'+esc(l.launch_date||'-')+'</td>'
         + '<td>'+(diffStr?'<span style="color:'+diffColor+';font-weight:700">'+diffStr+'</span>':'-')+'</td>'
-        + '<td>'+esc(l.contact||'-')+'</td>'
         + '<td>'+esc(officerNames||'-')+'</td>'
         + '<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis">'+esc(l.notes||'-')+'</td>'
         + '<td class="act" onclick="event.stopPropagation()"><span class="del" onclick="deleteLaunch(\''+l.id+'\')" title="删除" style="font-size:18px;cursor:pointer">×</span></td>'
@@ -1556,13 +1591,30 @@ function openLaunchEdit(launch){
   launchSelectedOfficers = launch ? (launch.officer_ids||[]) : [];
   $('launchEditId').value = launch ? launch.id : '';
   $('launchEditTitle').textContent = launch ? '编辑上线计划' : '添加上线计划';
-  $('launchProjectName').value = launch ? (launch.project_name||'') : '';
+  // Populate game select dropdown
+  var games = getData();
+  var sel = $('launchGameSelect');
+  var curVal = launch ? (launch.game_id||'') : '';
+  var opts = '<option value="">— 请选择已添加的游戏 —</option>';
+  // Get already-used game_ids to show indicator
+  var launches = getLaunches();
+  var usedIds = {};
+  for(var k=0;k<launches.length;k++){
+    if(launches[k].game_id && (!launch || launches[k].id!==launch.id)){
+      usedIds[launches[k].game_id] = true;
+    }
+  }
+  for(var i=0;i<games.length;i++){
+    var used = usedIds[games[i].id] ? ' ⏰' : '';
+    var selected = curVal===games[i].id ? ' selected' : '';
+    opts += '<option value="'+games[i].id+'"'+selected+'>'+esc(games[i].game_name)+used+'</option>';
+  }
+  sel.innerHTML = opts;
   $('launchDate').value = launch ? (launch.launch_date||'') : '';
-  $('launchContact').value = launch ? (launch.contact||'') : '';
   $('launchNotes').value = launch ? (launch.notes||'') : '';
   renderLaunchOfficerSelect();
   $('launchEditModal').classList.add('active');
-  setTimeout(function(){ $('launchProjectName').focus() }, 100);
+  setTimeout(function(){ sel.focus() }, 100);
 }
 
 function renderLaunchOfficerSelect(){
@@ -1618,16 +1670,20 @@ $('launchMsw').addEventListener('click', function(e){
 document.addEventListener('click', function(){ $('launchDd').style.display='none' });
 
 $('btnSaveLaunch').addEventListener('click', function(){
-  var name = $('launchProjectName').value.trim();
+  var gameId = $('launchGameSelect').value;
   var date = $('launchDate').value;
-  if(!name){ toast('请输入项目名称','er'); return; }
+  if(!gameId){ toast('请选择游戏记录','er'); return; }
   if(!date){ toast('请选择上线日期','er'); return; }
+  // Look up game name for backward compatibility
+  var games = getData();
+  var game = games.find(function(g){return g.id===gameId});
+  var projName = game ? game.game_name : '';
   var id = $('launchEditId').value;
   var obj = {
     id: id || genId(),
-    project_name: name,
+    game_id: gameId,
+    project_name: projName,
     launch_date: date,
-    contact: $('launchContact').value.trim(),
     officer_ids: launchSelectedOfficers.slice(),
     notes: $('launchNotes').value.trim(),
     created_at: id ? undefined : new Date().toISOString()
@@ -1645,6 +1701,7 @@ $('btnSaveLaunch').addEventListener('click', function(){
   toast(id?'更新成功':'添加成功','ok');
   closeLaunchEdit();
   renderLaunchList();
+  render(); // refresh main table to show launch date
 });
 
 function editLaunch(lid){
@@ -1666,6 +1723,7 @@ function deleteLaunch(lid){
 /* Launch reminder check — called on page load */
 function checkLaunchReminders(){
   var launches = getLaunches();
+  var games = getData();
   var today = new Date();
   today.setHours(0,0,0,0);
   var tomorrow = new Date(today);
@@ -1678,14 +1736,17 @@ function checkLaunchReminders(){
   for(var i=0;i<launches.length;i++){
     var l = launches[i];
     if(!l.launch_date) continue;
+    // Look up game name
+    var game = l.game_id ? games.find(function(g){return g.id===l.game_id}) : null;
+    var pName = game ? game.game_name : (l.project_name||'');
     var key1 = l.id + '_' + todayStr + '_pre';
     var key2 = l.id + '_' + todayStr + '_day';
     if(l.launch_date === tomorrowStr && !reminded[key1]){
-      reminders.push('⏰ 明天上线：' + (l.project_name||'') + (l.contact ? '（对接人：'+l.contact+'）' : ''));
+      reminders.push('⏰ 明天上线：' + pName);
       reminded[key1] = true;
     }
     if(l.launch_date === todayStr && !reminded[key2]){
-      reminders.push('🚀 今天上线：' + (l.project_name||'') + (l.contact ? '（对接人：'+l.contact+'）' : ''));
+      reminders.push('🚀 今天上线：' + pName);
       reminded[key2] = true;
     }
   }
