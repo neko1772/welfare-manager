@@ -48,6 +48,8 @@ th .sort-btn:hover{background:#e8eaf0;color:var(--p)}
 th .sort-btn.active{color:var(--p);font-weight:800}
 td{padding:var(--sp) 14px;border-bottom:1px solid #f0f0f0;font-size:14px;vertical-align:top}
 tr:hover{background:#fafbff}
+tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
+#gameTable tbody tr{cursor:pointer}
 .nw{white-space:nowrap}.mono{font-family:monospace;font-size:13px;color:var(--t2)}
 .tags{display:flex;flex-wrap:wrap;gap:4px}.tag{background:#eef2ff;color:var(--p);padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600}
 /* Modal */
@@ -142,6 +144,7 @@ tr:hover{background:#fafbff}
     <button class="btn-sm" id="btnLaunch" style="border-color:#8b5cf6;color:#7c3aed">🚀 上线计划</button>
     <button class="btn-sm" id="btnVersion" style="border-color:#0891b2;color:#0891b2">🏷 版本管理</button>
     <button class="btn-sm" id="btnLogout">退出</button>
+    <button class="btn-sm" id="delModeBadge" style="display:none;border-color:var(--d);color:var(--d);font-weight:700" onclick="disableDeleteMode()">🔒 删除模式（点此关闭）</button>
     <button class="btn btn-p" id="btnAdd" style="white-space:nowrap">＋ 添加</button>
   </div>
   <div class="wt">
@@ -559,6 +562,9 @@ $('btnLogout').addEventListener('click', function(){
   showPage('login'); $('lp').value=''; $('le').textContent='';
 });
 
+/* Hidden trigger: double-click title to enable delete mode */
+$('titleBtn').addEventListener('dblclick', enableDeleteMode);
+
 /* ════════════════════ PASSWORD MODAL ════════════════════ */
 function openPwdModal(){
   $('adminPwdInput').value='';
@@ -942,6 +948,29 @@ $('btnSaveEdit').addEventListener('click', function(){
 /* ════════════════════ RENDER TABLE ════════════════════ */
 var currentView = 'project';  // 'project' or 'officer'
 var sortState = { col: null, dir: null };  // col: 'version'|'launch', dir: 'asc'|'desc'|null
+var deleteMode = false;  // delete buttons hidden until admin verifies
+
+function selectRow(tr){
+  var all = document.querySelectorAll('#tbody tr.row-selected');
+  for(var i=0;i<all.length;i++) all[i].classList.remove('row-selected');
+  tr.classList.add('row-selected');
+}
+
+function enableDeleteMode(){
+  requireAdmin(function(){
+    deleteMode = true;
+    $('delModeBadge').style.display = 'inline-flex';
+    render();
+    toast('删除模式已开启','ok');
+  });
+}
+
+function disableDeleteMode(){
+  deleteMode = false;
+  $('delModeBadge').style.display = 'none';
+  render();
+  toast('删除模式已关闭','ok');
+}
 
 function toggleSort(col){
   if(sortState.col !== col){
@@ -1066,7 +1095,7 @@ function render(){
     var verCell = verObj
       ? '<span style="background:'+verObj.color+'20;color:'+verObj.color+';padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px" title="'+esc(verObj.desc||'')+'">'+esc(verObj.name)+'</span>'
       : '<span style="color:var(--t3);font-size:12px">—</span>';
-    html += '<tr>'
+    html += '<tr onclick="selectRow(this)">'
       + '<td style="font-weight:600">'+esc(g.game_name)+'</td>'
       + '<td>'+verCell+'</td>'
       + '<td><div class="tags">'+nickTags+'</div></td>'
@@ -1084,7 +1113,7 @@ function render(){
         + (g.qr_url?'<button class="btn-sm" onclick="copyQrAction(\''+esc(g.qr_url)+'\')">🖼二维码</button>':'')
         + '<button class="btn-sm" onclick="copyFullText(\''+g.id+'\')">📄全文</button>'
         + '<button class="btn-sm" onclick="openEditModal(getGameById(\''+g.id+'\'))">✏编辑</button>'
-        + '<button class="btn-sm dgr" onclick="deleteGame(\''+g.id+'\')">🗑删除</button>'
+        + (deleteMode?'<button class="btn-sm dgr" onclick="deleteGame(\''+g.id+'\')">🗑删除</button>':'')
         + '</div>'
       + '</td>'
       + '</tr>';
@@ -1166,7 +1195,7 @@ function renderOfficerView(){
       }
       projHtml = '<div style="display:inline-block">'+parts.join('')+'</div>';
     }
-    html += '<tr>'
+    html += '<tr onclick="selectRow(this)">'
       + '<td style="font-weight:600;cursor:pointer" onclick="showOfficerDetail(\''+r.oid+'\')">'+esc(r.nick)+'</td>'
       + '<td>'+esc(r.phone||'-')+'</td>'
       + '<td>'+esc(r.device||'-')+'</td>'
