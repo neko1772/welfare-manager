@@ -24,11 +24,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
 .btn-blk{width:100%}.err{color:var(--d);font-size:13px;margin-top:8px}
 /* Main */
 #mainPage{display:none}#mainPage.active{display:block}
-.tb{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:var(--card);border-bottom:1px solid var(--b);padding:10px 20px}
+.tb{display:flex;gap:6px;align-items:center;flex-wrap:wrap;background:var(--card);border-bottom:1px solid var(--b);padding:10px 20px;flex-direction:row}
 .tb input{flex:1;min-width:180px;padding:9px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none}
 .tb input:focus{border-color:var(--p)}
 .count{font-size:13px;color:var(--t3);white-space:nowrap}
-.btn-sm{padding:7px 14px;border:1.5px solid #d0d5dd;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#555;transition:.2s;white-space:nowrap}
+.btn-sm{padding:5px 10px;border:1.5px solid #d0d5dd;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:#fff;color:#555;transition:.2s;white-space:nowrap}
 .btn-sm:hover{background:#f5f5f5}
 .btn-sm.pri{border-color:var(--p);color:var(--p)}
 .btn-sm.pri:hover{background:var(--p);color:#fff}
@@ -97,12 +97,13 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
 .stat-label{font-size:12px;color:var(--t3);margin-top:1px}
 .stat-sub{font-size:11px;color:var(--t3);margin-top:1px}
 /* Responsive */
-@media(max-width:640px){
+@media(max-width:520px){
   .officer-stats{padding:8px 10px;gap:6px}
   .stat-card{padding:8px 12px;min-width:70px}
   .stat-num{font-size:20px}
-}
-  :root{--w:96vw}.tb{padding:10px 14px;flex-direction:column;gap:8px}.tb input{min-width:0;width:100%}
+  :root{--w:96vw}
+  .tb{padding:10px 14px;flex-direction:row;flex-wrap:wrap;gap:6px}
+  .tb input{min-width:0;width:100%}
   .md .mb{padding:16px}.mo{padding:10px}
   th,td{padding:8px 8px;font-size:12px}
 }
@@ -1213,15 +1214,12 @@ function renderOfficerView(){
   }
 
   // --- Compute stats on ALL rows (before any filter) ---
-  var arr39 = [], arrHuanyu = [], arrQilong = [];
+  var arr39 = 0, arrHuanyu = 0, arrQilong = 0;
   for(var ri=0;ri<rows.length;ri++){
     var r = rows[ri];
-    for(var pj=0;pj<r.projects.length;pj++){
-      var gn = r.projects[pj].game_name;
-      if(gn.indexOf('三九')>=0 && arr39.indexOf(r.oid)<0) arr39.push(r.oid);
-      if(gn.indexOf('欢娱')>=0 && arrHuanyu.indexOf(r.oid)<0) arrHuanyu.push(r.oid);
-      if(gn.indexOf('七龙')>=0 && arrQilong.indexOf(r.oid)<0) arrQilong.push(r.oid);
-    }
+    if(r.name.indexOf('三九')>=0) arr39++;
+    if(r.name.indexOf('欢娱')>=0) arrHuanyu++;
+    if(r.name.indexOf('七龙')>=0) arrQilong++;
   }
   var qiyuCount = 0, noQiyuCount = 0;
   for(var ri2=0;ri2<rows.length;ri2++){
@@ -1230,9 +1228,9 @@ function renderOfficerView(){
   $('statTotal').textContent = rows.length;
   $('statQiyu').textContent = qiyuCount;
   $('statNoQiyu').textContent = noQiyuCount;
-  $('stat39').textContent = arr39.length;
-  $('statHuanyu').textContent = arrHuanyu.length;
-  $('statQilong').textContent = arrQilong.length;
+  $('stat39').textContent = arr39;
+  $('statHuanyu').textContent = arrHuanyu;
+  $('statQilong').textContent = arrQilong;
 
   // Update active state on cards
   var cards = document.querySelectorAll('#officerStats .stat-card');
@@ -1247,20 +1245,11 @@ function renderOfficerView(){
   } else if(officerFilter === 'noqiyu'){
     rows = rows.filter(function(r){ return r.qiyu === '否'; });
   } else if(officerFilter === '39'){
-    rows = rows.filter(function(r){
-      for(var p=0;p<r.projects.length;p++){ if(r.projects[p].game_name.indexOf('三九')>=0) return true; }
-      return false;
-    });
+    rows = rows.filter(function(r){ return r.name.indexOf('三九')>=0; });
   } else if(officerFilter === 'huanyu'){
-    rows = rows.filter(function(r){
-      for(var p=0;p<r.projects.length;p++){ if(r.projects[p].game_name.indexOf('欢娱')>=0) return true; }
-      return false;
-    });
+    rows = rows.filter(function(r){ return r.name.indexOf('欢娱')>=0; });
   } else if(officerFilter === 'qilong'){
-    rows = rows.filter(function(r){
-      for(var p=0;p<r.projects.length;p++){ if(r.projects[p].game_name.indexOf('七龙')>=0) return true; }
-      return false;
-    });
+    rows = rows.filter(function(r){ return r.name.indexOf('七龙')>=0; });
   }
 
   // Filter by keyword
@@ -1282,7 +1271,7 @@ function renderOfficerView(){
   else if(officerFilter==='qilong') filterHint = '七龙';
   $('countLabel').textContent = '共 '+rows.length+' 个福利官'+(filterHint?'（'+filterHint+'）':'（福利官视图）');
   // Update table header
-  $('gameTableHead').innerHTML = '<th>福利官昵称<div class="resize-handle"></div></th><th>手机号<div class="resize-handle"></div></th><th>设备<div class="resize-handle"></div></th><th>承接项目<div class="resize-handle"></div></th><th>七鱼<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>';
+  $('gameTableHead').innerHTML = '<th>福利官昵称<div class="resize-handle"></div></th><th>福利官名称<div class="resize-handle"></div></th><th>手机号<div class="resize-handle"></div></th><th>设备<div class="resize-handle"></div></th><th>承接项目<div class="resize-handle"></div></th><th>七鱼<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>';
   var tbody = $('tbody');
   if(rows.length===0){
     $('emptyState').style.display='block';
@@ -1309,8 +1298,13 @@ function renderOfficerView(){
       }
       projHtml = '<div style="display:inline-block">'+parts.join('')+'</div>';
     }
+    var nameStyle = '';
+    if(r.name.indexOf('三九')>=0) nameStyle = 'color:#3b82f6;font-weight:700';
+    else if(r.name.indexOf('欢娱')>=0) nameStyle = 'color:#22c55e;font-weight:700';
+    else if(r.name.indexOf('七龙')>=0) nameStyle = 'color:#8b5cf6;font-weight:700';
     html += '<tr onclick="selectRow(this)">'
       + '<td style="font-weight:600;cursor:pointer" onclick="showOfficerDetail(\''+r.oid+'\')">'+esc(r.nick)+'</td>'
+      + '<td style="'+nameStyle+'">'+esc(r.name||'—')+'</td>'
       + '<td>'+esc(r.phone||'-')+'</td>'
       + '<td>'+esc(r.device||'-')+'</td>'
       + '<td>'+projHtml+'</td>'
