@@ -1096,6 +1096,29 @@ function render(){
       return 0;
     });
   }
+  // --- Pin upcoming games to top (default, always active) ---
+  var upcoming = [], launched = [], noDate = [];
+  for(var gi=0;gi<games.length;gi++){
+    var g2 = games[gi];
+    var linfo = launchMap[g2.id];
+    if(linfo && linfo.launch_date){
+      var ld2 = new Date(linfo.launch_date+'T00:00:00');
+      if(ld2 >= today) upcoming.push(g2);
+      else launched.push(g2);
+    } else {
+      noDate.push(g2);
+    }
+  }
+  upcoming.sort(function(a,b){
+    var la = launchMap[a.id], lb = launchMap[b.id];
+    return (la.launch_date||'').localeCompare(lb.launch_date||'');
+  });
+  launched.sort(function(a,b){
+    var la = launchMap[a.id], lb = launchMap[b.id];
+    return (lb.launch_date||'').localeCompare(la.launch_date||'');
+  });
+  games = upcoming.concat(launched, noDate);
+  // --- Render ---
   var tbody = $('tbody');
   if(games.length===0){
     $('emptyState').style.display='block';
