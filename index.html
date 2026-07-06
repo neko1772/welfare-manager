@@ -1217,7 +1217,7 @@ function renderOfficerView(){
   var arr39 = 0, arrHuanyu = 0, arrQilong = 0;
   for(var ri=0;ri<rows.length;ri++){
     var r = rows[ri];
-    if(r.name.indexOf('三九')>=0) arr39++;
+    if(r.name.indexOf('三九')>=0 || r.name.indexOf('39')>=0) arr39++;
     if(r.name.indexOf('欢娱')>=0) arrHuanyu++;
     if(r.name.indexOf('七龙')>=0) arrQilong++;
   }
@@ -1245,7 +1245,7 @@ function renderOfficerView(){
   } else if(officerFilter === 'noqiyu'){
     rows = rows.filter(function(r){ return r.qiyu === '否'; });
   } else if(officerFilter === '39'){
-    rows = rows.filter(function(r){ return r.name.indexOf('三九')>=0; });
+    rows = rows.filter(function(r){ return r.name.indexOf('三九')>=0 || r.name.indexOf('39')>=0; });
   } else if(officerFilter === 'huanyu'){
     rows = rows.filter(function(r){ return r.name.indexOf('欢娱')>=0; });
   } else if(officerFilter === 'qilong'){
@@ -1299,7 +1299,7 @@ function renderOfficerView(){
       projHtml = '<div style="display:inline-block">'+parts.join('')+'</div>';
     }
     var nameStyle = '';
-    if(r.name.indexOf('三九')>=0) nameStyle = 'color:#3b82f6;font-weight:700';
+    if(r.name.indexOf('三九')>=0 || r.name.indexOf('39')>=0) nameStyle = 'color:#3b82f6;font-weight:700';
     else if(r.name.indexOf('欢娱')>=0) nameStyle = 'color:#22c55e;font-weight:700';
     else if(r.name.indexOf('七龙')>=0) nameStyle = 'color:#8b5cf6;font-weight:700';
     html += '<tr onclick="selectRow(this)">'
