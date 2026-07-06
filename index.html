@@ -155,7 +155,7 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
     <button class="btn-sm pri" id="btnExport">📤 导出</button>
     <button class="btn-sm" id="btnSync" style="border-color:#f59e0b;color:#d97706">📱 同步到手机</button>
     <button class="btn-sm pri" id="btnOfficerView">📋 福利官视图</button>
-    <button class="btn-sm" id="btnLaunch" style="border-color:#8b5cf6;color:#7c3aed">🚀 上线计划</button>
+    <button class="btn-sm" id="btnLaunch" style="border-color:#8b5cf6;color:#7c3aed">📅 更新计划</button>
     <button class="btn-sm" id="btnVersion" style="border-color:#0891b2;color:#0891b2">🏷 版本管理</button>
     <button class="btn-sm" id="btnLogout">退出</button>
     <button class="btn-sm" id="delModeBadge" style="display:none;border-color:var(--d);color:var(--d);font-weight:700" onclick="disableDeleteMode()">🔒 删除模式（点此关闭）</button>
@@ -370,41 +370,62 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
 <!-- 福利官详情弹窗 -->
 <div class="pop" id="officerPop"></div>
 
-<!-- 上线计划弹窗 -->
+<!-- 更新计划弹窗 -->
 <div class="mo" id="launchModal">
-<div class="md" style="max-width:800px">
-  <div class="hd"><span>🚀 新项目上线计划</span><span class="x" onclick="closeLaunch()">×</span></div>
+<div class="md" style="max-width:900px">
+  <div class="hd"><span>📅 更新计划（上线 + 版更）</span><span class="x" onclick="closeLaunch()">×</span></div>
   <div class="mb">
     <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-      <button class="btn btn-p" id="btnAddLaunch" style="font-size:13px;padding:8px 16px">＋ 添加上线计划</button>
-      <span style="font-size:13px;color:var(--t3);align-self:center">按上线日期倒序排列（最近即将上线的在最前）</span>
+      <button class="btn btn-p" id="btnAddLaunch" style="font-size:13px;padding:8px 16px">＋ 添加更新计划</button>
+      <span style="font-size:13px;color:var(--t3);align-self:center">按日期排序（最近的在最前）</span>
     </div>
     <div id="launchList"></div>
   </div>
 </div>
 </div>
 
-<!-- 添加/编辑上线计划弹窗 -->
+<!-- 添加/编辑更新计划弹窗 -->
 <div class="mo" id="launchEditModal">
 <div class="md" style="max-width:500px">
-  <div class="hd"><span id="launchEditTitle">添加上线计划</span><span class="x" onclick="closeLaunchEdit()">×</span></div>
+  <div class="hd"><span id="launchEditTitle">添加更新计划</span><span class="x" onclick="closeLaunchEdit()">×</span></div>
   <div class="mb">
     <input type="hidden" id="launchEditId">
     <label>选择游戏记录 *</label>
     <select id="launchGameSelect" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;margin-bottom:12px">
       <option value="">— 请选择已添加的游戏 —</option>
     </select>
-    <label>上线日期 *</label><input type="date" id="launchDate">
+    <label>计划类型 *</label>
+    <select id="planType" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;margin-bottom:12px" onchange="onPlanTypeChange()">
+      <option value="launch">🚀 上线（新游戏首次上线）</option>
+      <option value="version_update">🔄 版更（版本迭代更新）</option>
+    </select>
+    <div id="planVersionRow" style="display:none">
+      <label>对应版本 <span style="color:var(--t3);font-weight:400">（该版更对应的版本）</span></label>
+      <select id="planVersionId" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;margin-bottom:12px">
+        <option value="">— 选择版本 —</option>
+      </select>
+    </div>
+    <label>计划日期 *</label><input type="date" id="launchDate">
     <label>分配福利官 <span style="color:var(--t3);font-weight:400">（多选，可留空使用游戏记录中已选福利官）</span></label>
     <div style="border:1.5px solid #e0e0e0;border-radius:10px;padding:8px;min-height:42px;cursor:pointer;position:relative" id="launchMsw">
       <div style="display:flex;flex-wrap:wrap;gap:4px" id="launchMswWrap"><span class="ph" style="color:var(--t3)">点击选择福利官...</span></div>
       <div style="position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #e0e0e0;border-radius:10px;margin-top:4px;max-height:180px;overflow-y:auto;display:none;z-index:10" id="launchDd"></div>
     </div>
-    <label>备注</label><textarea id="launchNotes" placeholder="如：下周三上线，需提前配置" rows="2"></textarea>
+    <label>备注</label><textarea id="launchNotes" placeholder="例如：下周三上线，需提前配置" rows="2"></textarea>
   </div>
   <div class="mf">
     <button class="btn btn-o" onclick="closeLaunchEdit()">取消</button>
     <button class="btn btn-p" id="btnSaveLaunch">保存</button>
+  </div>
+</div>
+</div>
+
+<!-- 游戏更新日志弹窗 -->
+<div class="mo" id="gamePlanLogModal">
+<div class="md" style="max-width:700px">
+  <div class="hd"><span>📋 <span id="planLogTitle">上线与更新日志</span></span><span class="x" onclick="closeGamePlanLog()">×</span></div>
+  <div class="mb">
+    <div id="planLogContent"></div>
   </div>
 </div>
 </div>
@@ -511,6 +532,7 @@ var GH_TOKEN_KEY = 'gw_gh_token';
 var GH_REPO = 'neko1772/welfare-manager';
 var GH_FILE = 'data.json';
 var LAUNCH_KEY = 'gw_launches';
+var PLAN_KEY = 'gw_plans';  // 更新计划：上线 + 版更
 var LAUNCH_REMINDER_KEY = 'gw_launch_reminded';
 var VERSION_KEY = 'gw_versions';
 
@@ -726,6 +748,53 @@ function getLaunches(){
   try{ return JSON.parse(localStorage.getItem(LAUNCH_KEY)) || [] }catch(e){ return [] }
 }
 function saveLaunches(arr){ localStorage.setItem(LAUNCH_KEY, JSON.stringify(arr)) }
+/* Plans: 更新计划（上线 + 版更） */
+function getPlans(){
+  try{ return JSON.parse(localStorage.getItem(PLAN_KEY)) || [] }catch(e){ return [] }
+}
+function savePlans(arr){ localStorage.setItem(PLAN_KEY, JSON.stringify(arr)) }
+/* Migrate old LAUNCH_KEY to PLAN_KEY */
+function migratePlans(){
+  var plans = getPlans();
+  if(plans.length>0) return plans; // already migrated
+  var old = getLaunches();
+  if(old.length===0) return [];
+  plans = old.map(function(l){
+    return {
+      id: l.id,
+      game_id: l.game_id,
+      date: l.launch_date||'',
+      type: 'launch',
+      version_id: '',
+      officer_ids: l.officer_ids||[],
+      notes: l.notes||'',
+      created_at: l.created_at||new Date().toISOString()
+    };
+  });
+  savePlans(plans);
+  return plans;
+}
+/* Get the most recent plan date for a game (any type) */
+function getLatestPlanDate(gameId){
+  var plans = getPlans();
+  var latest = '';
+  for(var i=0;i<plans.length;i++){
+    if(plans[i].game_id===gameId && plans[i].date && (!latest||plans[i].date>latest)){
+      latest = plans[i].date;
+    }
+  }
+  return latest;
+}
+/* Get all plans for a game, sorted by date desc */
+function getGamePlansSorted(gameId){
+  var plans = getPlans();
+  var result = [];
+  for(var i=0;i<plans.length;i++){
+    if(plans[i].game_id===gameId) result.push(plans[i]);
+  }
+  result.sort(function(a,b){ return (b.date||'').localeCompare(a.date||'') });
+  return result;
+}
 /* Versions: predefined + custom */
 function getVersions(){
   try{ return JSON.parse(localStorage.getItem(VERSION_KEY)) || [] }catch(e){ return [] }
@@ -1054,11 +1123,15 @@ function render(){
   if(currentView==='officer'){ renderOfficerView(); return; }
   var games = migrateGames(getData());
   var offs = getOfficers();
-  var launches = getLaunches();
-  // Build a map: game_id → launch info
-  var launchMap = {};
-  for(var li=0;li<launches.length;li++){
-    if(launches[li].game_id) launchMap[launches[li].game_id] = launches[li];
+  migratePlans();
+  var plans = getPlans();
+  // Build a map: game_id → latest plan date (for rendering & pinning)
+  var planDateMap = {};
+  for(var pi=0;pi<plans.length;pi++){
+    var pd = plans[pi].date;
+    if(plans[pi].game_id && pd && (!planDateMap[plans[pi].game_id] || pd > planDateMap[plans[pi].game_id])){
+      planDateMap[plans[pi].game_id] = pd;
+    }
   }
   var today = new Date();
   today.setHours(0,0,0,0);
@@ -1077,8 +1150,10 @@ function render(){
     });
   }
   $('countLabel').textContent = '共 '+games.length+' 条';
-  // Apply sorting
+  // --- Apply sorting (manual) ---
   if(sortState.col && sortState.dir){
+    console.log('[sort] applying', sortState.col, sortState.dir);
+    var oldLen = games.length;
     games.sort(function(a,b){
       var va, vb;
       if(sortState.col === 'version'){
@@ -1087,37 +1162,40 @@ function render(){
         va = vaObj ? vaObj.name : '\uffff';
         vb = vbObj ? vbObj.name : '\uffff';
       } else if(sortState.col === 'launch'){
-        var la = launchMap[a.id], lb = launchMap[b.id];
-        va = (la && la.launch_date) ? la.launch_date : '9999-12-31';
-        vb = (lb && lb.launch_date) ? lb.launch_date : '9999-12-31';
+        va = planDateMap[a.id] || '9999-12-31';
+        vb = planDateMap[b.id] || '9999-12-31';
       }
       if(va < vb) return sortState.dir === 'asc' ? -1 : 1;
       if(va > vb) return sortState.dir === 'asc' ? 1 : -1;
       return 0;
     });
+    console.log('[sort] done, first game:', games[0] ? games[0].game_name : 'none');
   }
-  // --- Pin upcoming games to top (default, always active) ---
-  var upcoming = [], launched = [], noDate = [];
-  for(var gi=0;gi<games.length;gi++){
-    var g2 = games[gi];
-    var linfo = launchMap[g2.id];
-    if(linfo && linfo.launch_date){
-      var ld2 = new Date(linfo.launch_date+'T00:00:00');
-      if(ld2 >= today) upcoming.push(g2);
-      else launched.push(g2);
-    } else {
-      noDate.push(g2);
+  // --- Pin upcoming + new imports to top (only when no manual sort) ---
+  if(!sortState.col){
+    console.log('[pin] no manual sort, applying default grouping');
+    var upcoming = [], launched = [], noDate = [];
+    for(var gi=0;gi<games.length;gi++){
+      var g2 = games[gi];
+      var pdate = planDateMap[g2.id];
+      if(pdate){
+        var ld2 = new Date(pdate+'T00:00:00');
+        if(ld2 >= today) upcoming.push(g2);
+        else launched.push(g2);
+      } else {
+        noDate.push(g2);
+      }
     }
+    upcoming.sort(function(a,b){
+      var la = planDateMap[a.id], lb = planDateMap[b.id];
+      return (la||'').localeCompare(lb||'');
+    });
+    launched.sort(function(a,b){
+      var la = planDateMap[a.id], lb = planDateMap[b.id];
+      return (lb||'').localeCompare(la||'');
+    });
+    games = noDate.reverse().concat(upcoming, launched);  // new imports first, then upcoming, then launched
   }
-  upcoming.sort(function(a,b){
-    var la = launchMap[a.id], lb = launchMap[b.id];
-    return (la.launch_date||'').localeCompare(lb.launch_date||'');
-  });
-  launched.sort(function(a,b){
-    var la = launchMap[a.id], lb = launchMap[b.id];
-    return (lb.launch_date||'').localeCompare(la.launch_date||'');
-  });
-  games = upcoming.concat(launched, noDate);
   // --- Render ---
   var tbody = $('tbody');
   if(games.length===0){
@@ -1151,18 +1229,18 @@ function render(){
     var qrImg = g.qr_url ? '<img src="'+esc(g.qr_url)+'" style="width:48px;height:48px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="showQr(\''+esc(g.qr_url)+'\',\''+esc(g.game_name)+'\')">' : '—';
     var link = g.customer_link||'';
     var fullLink = link+(g.link_params||'');
-    // Launch date cell
-    var launchInfo = launchMap[g.id];
+    // Plan date cell (shows most recent plan date)
+    var planDate = planDateMap[g.id];
     var launchCell = '—';
-    if(launchInfo && launchInfo.launch_date){
-      var launchDate = new Date(launchInfo.launch_date+'T00:00:00');
-      var diffDays = Math.round((launchDate - today) / 86400000);
+    if(planDate){
+      var planDateObj = new Date(planDate+'T00:00:00');
+      var diffDays = Math.round((planDateObj - today) / 86400000);
       var diffStr = '', diffColor = '', diffBg = '';
       if(diffDays === 0){ diffStr = '⏰今天'; diffColor = '#fff'; diffBg = '#e53935'; }
       else if(diffDays === 1){ diffStr = '⏰明天'; diffColor = '#fff'; diffBg = '#f59e0b'; }
       else if(diffDays > 0){ diffStr = diffDays+'天后'; diffColor = '#16a34a'; diffBg = '#f0fdf4'; }
       else { diffStr = '已上线'+Math.abs(diffDays)+'天'; diffColor = 'var(--t3)'; diffBg = 'transparent'; }
-      launchCell = '<div style="font-size:13px;font-weight:600">'+esc(launchInfo.launch_date)+'</div>'
+      launchCell = '<div style="font-size:13px;font-weight:600">'+esc(planDate)+'</div>'
         + '<span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;color:'+diffColor+';background:'+diffBg+';'+(diffBg==='transparent'?'border:1px solid #e0e0e0':'')+'">'+diffStr+'</span>';
     }
     // Version tag
@@ -1183,10 +1261,9 @@ function render(){
       + '<td class="nw">'
         + '<div style="display:flex;flex-wrap:wrap;gap:4px">'
         + (link?'<button class="btn-sm" onclick="copyText(\''+esc(link)+'\')">🔗链接</button>':'')
-        + ((g.link_params||'')?'<button class="btn-sm" onclick="copyText(\''+esc(g.link_params)+'\')">🔗参数</button>':'')
-        + (fullLink?'<button class="btn-sm pri" onclick="copyText(\''+esc(fullLink)+'\')">🔗完整</button>':'')
         + (g.qr_url?'<button class="btn-sm" onclick="copyQrAction(\''+esc(g.qr_url)+'\')">🖼二维码</button>':'')
         + '<button class="btn-sm" onclick="copyFullText(\''+g.id+'\')">📄全文</button>'
+        + '<button class="btn-sm" onclick="showGamePlans(\''+g.id+'\')" style="border-color:#8b5cf6;color:#7c3aed">📋日志</button>'
         + '<button class="btn-sm" onclick="openEditModal(getGameById(\''+g.id+'\'))">✏编辑</button>'
         + (deleteMode?'<button class="btn-sm dgr" onclick="deleteGame(\''+g.id+'\')">🗑删除</button>':'')
         + '</div>'
@@ -1861,7 +1938,7 @@ $('btnDoImport').addEventListener('click', function(){
 $('btnExport').addEventListener('click', function(){
   var games=getData();
   var offs=getOfficers();
-  var launches=getLaunches();
+  var plans=getPlans();
   var versions=getVersions();
   // Add officer nick names to export for readability
   var exportData = games.map(function(g){
@@ -1869,7 +1946,7 @@ $('btnExport').addEventListener('click', function(){
     obj.officers = (g.officer_ids||[]).map(function(oid){var o=offs.find(function(x){return x.id===oid});return o?({nick:o.nick,name:o.name}):null}).filter(Boolean);
     return obj;
   });
-  var blob=new Blob([JSON.stringify({games:exportData,officers:offs,launches:launches,versions:versions},null,2)],{type:'application/json'});
+  var blob=new Blob([JSON.stringify({games:exportData,officers:offs,plans:plans,versions:versions},null,2)],{type:'application/json'});
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   a.download='福利官数据_'+new Date().toISOString().slice(0,10)+'.json';
@@ -2016,55 +2093,63 @@ $('btnAdd').addEventListener('click', function(){openEditModal(null)});
 /* ════════════════════ ESC CLOSE ════════════════════ */
 document.addEventListener('keydown', function(e){
   if(e.key==='Escape'){
-    closeEdit(); closePwdModal(); closeImport(); closeOfficerLib(); closeOfficerEdit(); closeQr(); closeDeleteVerify(); closeGitToken(); closeLaunch(); closeLaunchEdit(); closeVersion(); closeVersionEdit();
+    closeEdit(); closePwdModal(); closeImport(); closeOfficerLib(); closeOfficerEdit(); closeQr(); closeDeleteVerify(); closeGitToken(); closeLaunch(); closeLaunchEdit(); closeVersion(); closeVersionEdit(); closeGamePlanLog();
   }
 });
 
 /* ════════════════════ LAUNCH SCHEDULE ════════════════════ */
 var launchSelectedOfficers = [];
+function onPlanTypeChange(){
+  var type = $('planType').value;
+  $('planVersionRow').style.display = type==='version_update' ? 'block' : 'none';
+}
+
 function openLaunch(){
-  renderLaunchList();
+  renderPlanList();
   $('launchModal').classList.add('active');
 }
 function closeLaunch(){ $('launchModal').classList.remove('active') }
 function closeLaunchEdit(){ $('launchEditModal').classList.remove('active') }
 
-function renderLaunchList(){
-  var launches = getLaunches();
+function renderPlanList(){
+  var plans = getPlans();
   var offs = getOfficers();
   var games = getData();
+  var versions = getVersions();
   var today = new Date();
   today.setHours(0,0,0,0);
-  // Sort by launch_date ascending (nearest first, future only highlighted)
-  launches.sort(function(a,b){
-    return (a.launch_date||'').localeCompare(b.launch_date||'');
+  // Sort by date ascending (nearest first)
+  plans.sort(function(a,b){
+    return (a.date||'').localeCompare(b.date||'');
   });
   var html = '';
-  if(launches.length===0){
-    html = '<div style="padding:20px;color:var(--t3);text-align:center">暂无上线计划，点击「＋ 添加上线计划」</div>';
+  if(plans.length===0){
+    html = '<div style="padding:20px;color:var(--t3);text-align:center">暂无更新计划，点击「＋ 添加更新计划」</div>';
   } else {
     html = '<table class="ot" id="launchTable"><thead><tr>'
       +'<th style="min-width:80px">项目名称<div class="resize-handle"></div></th>'
-      +'<th style="min-width:90px">上线日期<div class="resize-handle"></div></th>'
+      +'<th style="min-width:60px">类型<div class="resize-handle"></div></th>'
+      +'<th style="min-width:80px">版本<div class="resize-handle"></div></th>'
+      +'<th style="min-width:90px">日期<div class="resize-handle"></div></th>'
       +'<th style="min-width:60px">倒计时<div class="resize-handle"></div></th>'
       +'<th style="min-width:100px">分配福利官<div class="resize-handle"></div></th>'
       +'<th style="min-width:100px">备注<div class="resize-handle"></div></th>'
       +'<th style="width:80px;min-width:80px">操作<div class="resize-handle"></div></th>'
       +'</tr></thead><tbody>';
-    for(var i=0;i<launches.length;i++){
-      var l = launches[i];
+    for(var i=0;i<plans.length;i++){
+      var l = plans[i];
       // Look up game name from game_id, fallback to project_name for old data
       var game = l.game_id ? games.find(function(g){return g.id===l.game_id}) : null;
       var projName = game ? game.game_name : (l.project_name || '(已删除)');
-      var launchDate = l.launch_date ? new Date(l.launch_date+'T00:00:00') : null;
-      var diffDays = launchDate ? Math.round((launchDate - today) / 86400000) : null;
+      var pdate = l.date ? new Date(l.date+'T00:00:00') : null;
+      var diffDays = pdate ? Math.round((pdate - today) / 86400000) : null;
       var diffStr = '';
       var diffColor = '';
       if(diffDays !== null){
-        if(diffDays === 0){ diffStr = '⏰ 今天上线'; diffColor = '#e53935'; }
-        else if(diffDays === 1){ diffStr = '⏰ 明天上线'; diffColor = '#f59e0b'; }
+        if(diffDays === 0){ diffStr = '⏰ 今天'; diffColor = '#e53935'; }
+        else if(diffDays === 1){ diffStr = '⏰ 明天'; diffColor = '#f59e0b'; }
         else if(diffDays > 0){ diffStr = diffDays + ' 天后'; diffColor = '#16a34a'; }
-        else { diffStr = '已上线 ' + Math.abs(diffDays) + ' 天前'; diffColor = 'var(--t3)'; }
+        else { diffStr = '已 ' + Math.abs(diffDays) + ' 天前'; diffColor = 'var(--t3)'; }
       }
       var officerNames = (l.officer_ids||[]).map(function(oid){
         var o = offs.find(function(x){return x.id===oid});
@@ -2077,10 +2162,22 @@ function renderLaunchList(){
           return o ? o.nick : '';
         }).filter(Boolean).join('、');
       }
+      // Type badge
+      var typeBadge = l.type==='version_update'
+        ? '<span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:8px;font-weight:700;font-size:12px">🔄版更</span>'
+        : '<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:8px;font-weight:700;font-size:12px">🚀上线</span>';
+      // Version tag
+      var verTag = '—';
+      if(l.version_id){
+        var verObj2 = versions.find(function(v){return v.id===l.version_id});
+        verTag = verObj2 ? '<span style="background:'+verObj2.color+'20;color:'+verObj2.color+';padding:2px 8px;border-radius:8px;font-weight:700;font-size:12px">'+esc(verObj2.name)+'</span>' : l.version_id;
+      }
       var nameStyle = game ? 'font-weight:600' : 'font-weight:600;color:var(--t3)';
       html += '<tr onclick="editLaunch(\''+l.id+'\')" style="cursor:pointer">'
         + '<td style="'+nameStyle+'">'+esc(projName)+'</td>'
-        + '<td>'+esc(l.launch_date||'-')+'</td>'
+        + '<td>'+typeBadge+'</td>'
+        + '<td>'+verTag+'</td>'
+        + '<td>'+esc(l.date||'-')+'</td>'
         + '<td>'+(diffStr?'<span style="color:'+diffColor+';font-weight:700">'+diffStr+'</span>':'-')+'</td>'
         + '<td>'+esc(officerNames||'-')+'</td>'
         + '<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis">'+esc(l.notes||'-')+'</td>'
@@ -2101,28 +2198,30 @@ $('btnAddLaunch').addEventListener('click', function(){
 function openLaunchEdit(launch){
   launchSelectedOfficers = launch ? (launch.officer_ids||[]) : [];
   $('launchEditId').value = launch ? launch.id : '';
-  $('launchEditTitle').textContent = launch ? '编辑上线计划' : '添加上线计划';
+  $('launchEditTitle').textContent = launch ? '编辑更新计划' : '添加更新计划';
   // Populate game select dropdown
   var games = getData();
   var sel = $('launchGameSelect');
   var curVal = launch ? (launch.game_id||'') : '';
   var opts = '<option value="">— 请选择已添加的游戏 —</option>';
-  // Get already-used game_ids to show indicator
-  var launches = getLaunches();
-  var usedIds = {};
-  for(var k=0;k<launches.length;k++){
-    if(launches[k].game_id && (!launch || launches[k].id!==launch.id)){
-      usedIds[launches[k].game_id] = true;
-    }
-  }
   for(var i=0;i<games.length;i++){
-    var used = usedIds[games[i].id] ? ' ⏰' : '';
     var selected = curVal===games[i].id ? ' selected' : '';
-    opts += '<option value="'+games[i].id+'"'+selected+'>'+esc(games[i].game_name)+used+'</option>';
+    opts += '<option value="'+games[i].id+'"'+selected+'>'+esc(games[i].game_name)+'</option>';
   }
   sel.innerHTML = opts;
-  $('launchDate').value = launch ? (launch.launch_date||'') : '';
+  $('planType').value = launch ? (launch.type||'launch') : 'launch';
+  $('launchDate').value = launch ? (launch.date||'') : '';
   $('launchNotes').value = launch ? (launch.notes||'') : '';
+  // Populate version selector
+  var vs = getVersions();
+  var verSel = $('planVersionId');
+  var vOpts2 = '<option value="">— 选择版本 —</option>';
+  for(var vi=0;vi<vs.length;vi++){
+    var selV2 = (launch&&launch.version_id===vs[vi].id) ? ' selected' : '';
+    vOpts2 += '<option value="'+vs[vi].id+'"'+selV2+'>'+esc(vs[vi].name)+' - '+esc(vs[vi].desc||'')+'</option>';
+  }
+  verSel.innerHTML = vOpts2;
+  onPlanTypeChange();
   renderLaunchOfficerSelect();
   $('launchEditModal').classList.add('active');
   setTimeout(function(){ sel.focus() }, 100);
@@ -2190,50 +2289,103 @@ $('btnSaveLaunch').addEventListener('click', function(){
   var game = games.find(function(g){return g.id===gameId});
   var projName = game ? game.game_name : '';
   var id = $('launchEditId').value;
+  var type = $('planType').value;
+  var versionId = type==='version_update' ? $('planVersionId').value : '';
   var obj = {
     id: id || genId(),
     game_id: gameId,
     project_name: projName,
-    launch_date: date,
+    date: date,
+    type: type,
+    version_id: versionId,
     officer_ids: launchSelectedOfficers.slice(),
     notes: $('launchNotes').value.trim(),
     created_at: id ? undefined : new Date().toISOString()
   };
-  var launches = getLaunches();
+  var plans = getPlans();
   if(id){
-    var idx = launches.findIndex(function(l){return l.id===id});
-    if(idx>=0){ obj.created_at = launches[idx].created_at; launches[idx]=obj; }
-    else launches.push(obj);
+    var idx = plans.findIndex(function(l){return l.id===id});
+    if(idx>=0){ obj.created_at = plans[idx].created_at; plans[idx]=obj; }
+    else plans.push(obj);
   } else {
     obj.created_at = new Date().toISOString();
-    launches.push(obj);
+    plans.push(obj);
   }
-  saveLaunches(launches);
+  savePlans(plans);
   toast(id?'更新成功':'添加成功','ok');
   closeLaunchEdit();
-  renderLaunchList();
-  render(); // refresh main table to show launch date
+  renderPlanList();
+  render();
 });
 
 function editLaunch(lid){
-  var launches = getLaunches();
-  var l = launches.find(function(x){return x.id===lid});
+  var plans = getPlans();
+  var l = plans.find(function(x){return x.id===lid});
   if(!l) return;
   openLaunchEdit(l);
 }
 
 function deleteLaunch(lid){
-  if(!confirm('确认删除这条上线计划？')) return;
-  var launches = getLaunches();
-  launches = launches.filter(function(l){return l.id!==lid});
-  saveLaunches(launches);
+  if(!confirm('确认删除这条更新计划？')) return;
+  var plans = getPlans();
+  plans = plans.filter(function(l){return l.id!==lid});
+  savePlans(plans);
   toast('已删除','ok');
-  renderLaunchList();
+  renderPlanList();
+}
+
+
+
+/* ════════════════════ GAME PLAN LOG (per-game) ════════════════════ */
+function closeGamePlanLog(){ $('gamePlanLogModal').classList.remove('active') }
+
+function showGamePlans(gameId){
+  var games = getData();
+  var game = games.find(function(g){return g.id===gameId});
+  if(!game) return;
+  var plans = getGamePlansSorted(gameId);
+  var versions = getVersions();
+  var offs = getOfficers();
+  $('planLogTitle').textContent = '上线与更新日志 - ' + esc(game.game_name);
+  var html = '';
+  if(plans.length===0){
+    html = '<div style="padding:20px;color:var(--t3);text-align:center">暂无更新记录</div>';
+  } else {
+    html = '<div style="display:flex;flex-direction:column;gap:10px">';
+    for(var i=0;i<plans.length;i++){
+      var p = plans[i];
+      var typeBadge = p.type==='version_update'
+        ? '<span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:8px;font-weight:700;font-size:12px">🔄版更</span>'
+        : '<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:8px;font-weight:700;font-size:12px">🚀上线</span>';
+      var verTag = '';
+      if(p.version_id){
+        var verObj3 = versions.find(function(v){return v.id===p.version_id});
+        if(verObj3) verTag = ' <span style="background:'+verObj3.color+'20;color:'+verObj3.color+';padding:2px 8px;border-radius:8px;font-weight:700;font-size:12px">'+esc(verObj3.name)+'</span>';
+      }
+      var offNames = (p.officer_ids||[]).map(function(oid){
+        var o = offs.find(function(x){return x.id===oid});
+        return o ? o.nick : '';
+      }).filter(Boolean).join('、');
+      html += '<div style="background:#f8f9fb;border-radius:10px;padding:12px 16px;border-left:3px solid '+(p.type==='version_update'?'#f59e0b':'#3b82f6')+'">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">'
+        + '<div>'+typeBadge+verTag+' <span style="font-weight:600">'+esc(p.date||'')+'</span></div>'
+        + '<div style="display:flex;gap:6px">'
+        + '<button class="btn-sm" onclick="closeGamePlanLog();editLaunch(\''+p.id+'\')">✏编辑</button>'
+        + '<button class="btn-sm dgr" onclick="closeGamePlanLog();deleteLaunch(\''+p.id+'\')">🗑删除</button>'
+        + '</div></div>'
+        + (offNames?'<div style="font-size:13px;color:var(--t2);margin-top:4px">福利官：'+esc(offNames)+'</div>':'')
+        + (p.notes?'<div style="font-size:13px;color:var(--t2);margin-top:4px">备注：'+esc(p.notes)+'</div>':'')
+        + '</div>';
+    }
+    html += '</div>';
+  }
+  $('planLogContent').innerHTML = html;
+  $('gamePlanLogModal').classList.add('active');
 }
 
 /* Launch reminder check — called on page load */
 function checkLaunchReminders(){
-  var launches = getLaunches();
+  var plans = getPlans();
   var games = getData();
   var today = new Date();
   today.setHours(0,0,0,0);
@@ -2244,20 +2396,21 @@ function checkLaunchReminders(){
   var reminded = {};
   try{ reminded = JSON.parse(localStorage.getItem(LAUNCH_REMINDER_KEY)) || {} }catch(e){}
   var reminders = [];
-  for(var i=0;i<launches.length;i++){
-    var l = launches[i];
-    if(!l.launch_date) continue;
+  for(var i=0;i<plans.length;i++){
+    var l = plans[i];
+    if(!l.date) continue;
     // Look up game name
     var game = l.game_id ? games.find(function(g){return g.id===l.game_id}) : null;
     var pName = game ? game.game_name : (l.project_name||'');
+    var tpLabel = l.type==='version_update' ? '版更' : '上线';
     var key1 = l.id + '_' + todayStr + '_pre';
     var key2 = l.id + '_' + todayStr + '_day';
-    if(l.launch_date === tomorrowStr && !reminded[key1]){
-      reminders.push('⏰ 明天上线：' + pName);
+    if(l.date === tomorrowStr && !reminded[key1]){
+      reminders.push('⏰ 明天'+tpLabel+'：' + pName);
       reminded[key1] = true;
     }
-    if(l.launch_date === todayStr && !reminded[key2]){
-      reminders.push('🚀 今天上线：' + pName);
+    if(l.date === todayStr && !reminded[key2]){
+      reminders.push('🚀 今天'+tpLabel+'：' + pName);
       reminded[key2] = true;
     }
   }
@@ -2438,7 +2591,7 @@ function doSync(token){
   var data = {
     games: getData(),
     officers: getOfficers(),
-    launches: getLaunches(),
+    plans: getPlans(),
     versions: getVersions()
   };
   var content = JSON.stringify(data);
