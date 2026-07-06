@@ -1061,6 +1061,7 @@ $('btnSaveEdit').addEventListener('click', function(){
 /* ════════════════════ RENDER TABLE ════════════════════ */
 var currentView = 'project';  // 'project' or 'officer'
 var sortState = { col: null, dir: null };  // col: 'version'|'launch', dir: 'asc'|'desc'|null
+var planSortState = { col: null, dir: null };  // plans table sort: 'date'
 var deleteMode = false;  // delete buttons hidden until admin verifies
 var officerFilter = 'all';  // 'all'|'qiyu'|'noqiyu'|'39'|'huanyu'|'qilong'
 
@@ -1113,6 +1114,33 @@ function updateSortIndicators(){
     if(sortState.col === col && sortState.dir){
       b.classList.add('active');
       b.textContent = sortState.dir === 'asc' ? '↑' : '↓';
+    } else {
+      b.classList.remove('active');
+      b.textContent = '⇅';
+    }
+  }
+}
+
+function togglePlanSort(col){
+  if(planSortState.col !== col){
+    planSortState.col = col;
+    planSortState.dir = 'asc';
+  } else {
+    if(planSortState.dir === 'asc') planSortState.dir = 'desc';
+    else if(planSortState.dir === 'desc'){ planSortState.col = null; planSortState.dir = null; }
+    else planSortState.dir = 'asc';
+  }
+  renderPlanList();
+}
+
+function updatePlanSortIndicators(){
+  var btns = document.querySelectorAll('#launchTable th .sort-btn');
+  for(var i=0;i<btns.length;i++){
+    var b = btns[i];
+    var col = b.getAttribute('data-col');
+    if(planSortState.col === col && planSortState.dir){
+      b.classList.add('active');
+      b.textContent = planSortState.dir === 'asc' ? '↑' : '↓';
     } else {
       b.classList.remove('active');
       b.textContent = '⇅';
@@ -2118,19 +2146,29 @@ function renderPlanList(){
   var versions = getVersions();
   var today = new Date();
   today.setHours(0,0,0,0);
-  // Sort by date ascending (nearest first)
-  plans.sort(function(a,b){
-    return (a.date||'').localeCompare(b.date||'');
-  });
+  // Default: sort by date descending (newest first) unless manually sorted
+  if(!planSortState.col){
+    plans.sort(function(a,b){
+      return (b.date||'').localeCompare(a.date||'');
+    });
+  } else {
+    plans.sort(function(a,b){
+      var va = a.date||'';
+      var vb = b.date||'';
+      if(va < vb) return planSortState.dir === 'asc' ? -1 : 1;
+      if(va > vb) return planSortState.dir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }
   var html = '';
   if(plans.length===0){
     html = '<div style="padding:20px;color:var(--t3);text-align:center">暂无更新计划，点击「＋ 添加更新计划」</div>';
   } else {
     html = '<table class="ot" id="launchTable"><thead><tr>'
       +'<th style="min-width:80px">项目名称<div class="resize-handle"></div></th>'
-      +'<th style="min-width:60px">类型<div class="resize-handle"></div></th>'
+      +'<th style="min-width:75px">类型<div class="resize-handle"></div></th>'
       +'<th style="min-width:80px">版本<div class="resize-handle"></div></th>'
-      +'<th style="min-width:90px">日期<div class="resize-handle"></div></th>'
+      +'<th style="min-width:80px">日期<span class="sort-btn" data-col="date" onclick="event.stopPropagation();togglePlanSort(\'date\')" title="点击排序">⇅</span><div class="resize-handle"></div></th>'
       +'<th style="min-width:60px">倒计时<div class="resize-handle"></div></th>'
       +'<th style="min-width:100px">分配福利官<div class="resize-handle"></div></th>'
       +'<th style="min-width:100px">备注<div class="resize-handle"></div></th>'
@@ -2188,6 +2226,7 @@ function renderPlanList(){
   }
   $('launchList').innerHTML = html;
   initColumnResize();
+  updatePlanSortIndicators();
 }
 
 $('btnLaunch').addEventListener('click', openLaunch);
