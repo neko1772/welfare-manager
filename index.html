@@ -87,8 +87,21 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
 @keyframes fadeIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
 .ts.ok{background:var(--s);color:#fff}.ts.er{background:var(--d);color:#fff}
 .empty{text-align:center;padding:60px 20px;color:var(--t3)}
+/* Officer stats cards */
+.officer-stats{display:none;flex-wrap:wrap;gap:10px;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--b)}
+.stat-card{cursor:pointer;padding:10px 16px;border-radius:12px;border:2px solid var(--b);background:#fff;text-align:center;min-width:95px;transition:.2s;user-select:none}
+.stat-card:hover{border-color:var(--p);background:#f8f9ff}
+.stat-card.active{border-color:var(--p);background:#eef2ff;box-shadow:0 2px 8px rgba(99,102,241,.15)}
+.stat-num{font-size:26px;font-weight:800;color:var(--t);line-height:1.2}
+.stat-card.active .stat-num{color:var(--p)}
+.stat-label{font-size:12px;color:var(--t3);margin-top:1px}
+.stat-sub{font-size:11px;color:var(--t3);margin-top:1px}
 /* Responsive */
 @media(max-width:640px){
+  .officer-stats{padding:8px 10px;gap:6px}
+  .stat-card{padding:8px 12px;min-width:70px}
+  .stat-num{font-size:20px}
+}
   :root{--w:96vw}.tb{padding:10px 14px;flex-direction:column;gap:8px}.tb input{min-width:0;width:100%}
   .md .mb{padding:16px}.mo{padding:10px}
   th,td{padding:8px 8px;font-size:12px}
@@ -146,6 +159,36 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
     <button class="btn-sm" id="btnLogout">退出</button>
     <button class="btn-sm" id="delModeBadge" style="display:none;border-color:var(--d);color:var(--d);font-weight:700" onclick="disableDeleteMode()">🔒 删除模式（点此关闭）</button>
     <button class="btn btn-p" id="btnAdd" style="white-space:nowrap">＋ 添加</button>
+  </div>
+  <!-- 福利官视图统计导航 -->
+  <div class="officer-stats" id="officerStats">
+    <div class="stat-card active" data-filter="all" onclick="setOfficerFilter('all')">
+      <div class="stat-num" id="statTotal">0</div>
+      <div class="stat-label">福利官总数</div>
+    </div>
+    <div class="stat-card" data-filter="qiyu" onclick="setOfficerFilter('qiyu')">
+      <div class="stat-num" id="statQiyu" style="color:var(--s)">0</div>
+      <div class="stat-label">七鱼已绑定</div>
+    </div>
+    <div class="stat-card" data-filter="noqiyu" onclick="setOfficerFilter('noqiyu')">
+      <div class="stat-num" id="statNoQiyu" style="color:var(--d)">0</div>
+      <div class="stat-label">未绑定七鱼</div>
+    </div>
+    <div class="stat-card" data-filter="39" onclick="setOfficerFilter('39')">
+      <div class="stat-num" id="stat39">0</div>
+      <div class="stat-label">三九</div>
+      <div class="stat-sub">福利官</div>
+    </div>
+    <div class="stat-card" data-filter="huanyu" onclick="setOfficerFilter('huanyu')">
+      <div class="stat-num" id="statHuanyu">0</div>
+      <div class="stat-label">欢娱</div>
+      <div class="stat-sub">福利官</div>
+    </div>
+    <div class="stat-card" data-filter="qilong" onclick="setOfficerFilter('qilong')">
+      <div class="stat-num" id="statQilong">0</div>
+      <div class="stat-label">七龙</div>
+      <div class="stat-sub">福利官</div>
+    </div>
   </div>
   <div class="wt">
     <table id="gameTable">
@@ -949,6 +992,7 @@ $('btnSaveEdit').addEventListener('click', function(){
 var currentView = 'project';  // 'project' or 'officer'
 var sortState = { col: null, dir: null };  // col: 'version'|'launch', dir: 'asc'|'desc'|null
 var deleteMode = false;  // delete buttons hidden until admin verifies
+var officerFilter = 'all';  // 'all'|'qiyu'|'noqiyu'|'39'|'huanyu'|'qilong'
 
 function selectRow(tr){
   var all = document.querySelectorAll('#tbody tr.row-selected');
@@ -970,6 +1014,13 @@ function disableDeleteMode(){
   $('delModeBadge').style.display = 'none';
   render();
   toast('删除模式已关闭','ok');
+}
+
+// Officer view stats filter
+function setOfficerFilter(filter){
+  if(officerFilter === filter){ officerFilter = 'all'; }
+  else { officerFilter = filter; }
+  renderOfficerView();
 }
 
 function toggleSort(col){
@@ -1134,6 +1185,10 @@ function renderOfficerView(){
   var games = migrateGames(getData());
   var offs = getOfficers();
   var kw = ($('searchInput').value||'').trim().toLowerCase();
+
+  // Show stats bar
+  $('officerStats').style.display = 'flex';
+
   // Build one row per officer
   var rows = [];
   for(var i=0;i<offs.length;i++){
@@ -1156,6 +1211,58 @@ function renderOfficerView(){
       projects: projList
     });
   }
+
+  // --- Compute stats on ALL rows (before any filter) ---
+  var arr39 = [], arrHuanyu = [], arrQilong = [];
+  for(var ri=0;ri<rows.length;ri++){
+    var r = rows[ri];
+    for(var pj=0;pj<r.projects.length;pj++){
+      var gn = r.projects[pj].game_name;
+      if(gn.indexOf('三九')>=0 && arr39.indexOf(r.oid)<0) arr39.push(r.oid);
+      if(gn.indexOf('欢娱')>=0 && arrHuanyu.indexOf(r.oid)<0) arrHuanyu.push(r.oid);
+      if(gn.indexOf('七龙')>=0 && arrQilong.indexOf(r.oid)<0) arrQilong.push(r.oid);
+    }
+  }
+  var qiyuCount = 0, noQiyuCount = 0;
+  for(var ri2=0;ri2<rows.length;ri2++){
+    if(rows[ri2].qiyu==='否') noQiyuCount++; else qiyuCount++;
+  }
+  $('statTotal').textContent = rows.length;
+  $('statQiyu').textContent = qiyuCount;
+  $('statNoQiyu').textContent = noQiyuCount;
+  $('stat39').textContent = arr39.length;
+  $('statHuanyu').textContent = arrHuanyu.length;
+  $('statQilong').textContent = arrQilong.length;
+
+  // Update active state on cards
+  var cards = document.querySelectorAll('#officerStats .stat-card');
+  for(var ci=0;ci<cards.length;ci++){
+    cards[ci].classList.remove('active');
+    if(cards[ci].getAttribute('data-filter') === officerFilter) cards[ci].classList.add('active');
+  }
+
+  // --- Apply category filter ---
+  if(officerFilter === 'qiyu'){
+    rows = rows.filter(function(r){ return r.qiyu !== '否'; });
+  } else if(officerFilter === 'noqiyu'){
+    rows = rows.filter(function(r){ return r.qiyu === '否'; });
+  } else if(officerFilter === '39'){
+    rows = rows.filter(function(r){
+      for(var p=0;p<r.projects.length;p++){ if(r.projects[p].game_name.indexOf('三九')>=0) return true; }
+      return false;
+    });
+  } else if(officerFilter === 'huanyu'){
+    rows = rows.filter(function(r){
+      for(var p=0;p<r.projects.length;p++){ if(r.projects[p].game_name.indexOf('欢娱')>=0) return true; }
+      return false;
+    });
+  } else if(officerFilter === 'qilong'){
+    rows = rows.filter(function(r){
+      for(var p=0;p<r.projects.length;p++){ if(r.projects[p].game_name.indexOf('七龙')>=0) return true; }
+      return false;
+    });
+  }
+
   // Filter by keyword
   if(kw){
     rows = rows.filter(function(r){
@@ -1166,7 +1273,14 @@ function renderOfficerView(){
   }
   // Sort by nick
   rows.sort(function(a,b){ return a.nick.localeCompare(b.nick) });
-  $('countLabel').textContent = '共 '+rows.length+' 个福利官（福利官视图）';
+  // Build count label with filter hint
+  var filterHint = '';
+  if(officerFilter==='qiyu') filterHint = '七鱼已绑定';
+  else if(officerFilter==='noqiyu') filterHint = '未绑定七鱼';
+  else if(officerFilter==='39') filterHint = '三九';
+  else if(officerFilter==='huanyu') filterHint = '欢娱';
+  else if(officerFilter==='qilong') filterHint = '七龙';
+  $('countLabel').textContent = '共 '+rows.length+' 个福利官'+(filterHint?'（'+filterHint+'）':'（福利官视图）');
   // Update table header
   $('gameTableHead').innerHTML = '<th>福利官昵称<div class="resize-handle"></div></th><th>手机号<div class="resize-handle"></div></th><th>设备<div class="resize-handle"></div></th><th>承接项目<div class="resize-handle"></div></th><th>七鱼<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>';
   var tbody = $('tbody');
@@ -1211,6 +1325,8 @@ function renderOfficerView(){
 $('btnOfficerView').addEventListener('click', function(){
   if(currentView==='officer'){
     currentView = 'project';
+    officerFilter = 'all';
+    $('officerStats').style.display = 'none';
     $('btnOfficerView').textContent = '📋 福利官视图';
     $('btnOfficerView').classList.remove('pri');
     $('btnOfficerView').classList.add('pri');
@@ -1219,6 +1335,7 @@ $('btnOfficerView').addEventListener('click', function(){
     render();
   } else {
     currentView = 'officer';
+    officerFilter = 'all';
     $('btnOfficerView').textContent = '📋 项目视图';
     renderOfficerView();
   }
@@ -1871,7 +1988,10 @@ $('btnDoOfficerImport').addEventListener('click', function(){
 });
 
 /* ════════════════════ SEARCH ════════════════════ */
-$('searchInput').addEventListener('input', function(){render()});
+$('searchInput').addEventListener('input', function(){
+  if(currentView==='officer') renderOfficerView();
+  else render();
+});
 
 /* ════════════════════ ADD BUTTON ════════════════════ */
 $('btnAdd').addEventListener('click', function(){openEditModal(null)});
