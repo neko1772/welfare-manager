@@ -536,6 +536,14 @@ var PLAN_KEY = 'gw_plans';  // 更新计划：上线 + 版更
 var LAUNCH_REMINDER_KEY = 'gw_launch_reminded';
 var VERSION_KEY = 'gw_versions';
 
+/* ════════════════════ DATE UTIL ════════════════════ */
+function localDateStr(d){
+  var y = d.getFullYear();
+  var m = String(d.getMonth()+1).padStart(2,'0');
+  var day = String(d.getDate()).padStart(2,'0');
+  return y + '-' + m + '-' + day;
+}
+
 /* ════════════════════ HASH ════════════════════ */
 function simpleHash(str){
   var hash = 0;
@@ -2430,8 +2438,8 @@ function checkLaunchReminders(){
   today.setHours(0,0,0,0);
   var tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate()+1);
-  var todayStr = today.toISOString().slice(0,10);
-  var tomorrowStr = tomorrow.toISOString().slice(0,10);
+  var todayStr = localDateStr(today);
+  var tomorrowStr = localDateStr(tomorrow);
   var reminded = {};
   try{ reminded = JSON.parse(localStorage.getItem(LAUNCH_REMINDER_KEY)) || {} }catch(e){}
   var reminders = [];
