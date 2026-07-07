@@ -1002,7 +1002,7 @@ function renderTimeline(){
       var displayDate = formatTimelineDate(e.date);
       var typeLabel = e.type==='version_update' ? '版更' : '上线';
       var typeClass = e.type==='version_update' ? 'version_update' : 'launch';
-      html += '<div class="tw-item" onclick="gotoWelfareGame(\\''+esc(e.game_id)+'\\',\\''+esc(e.date)+'\\')">'
+      html += "<div class='tw-item' onclick=\"gotoWelfareGame('"+esc(e.game_id)+"','"+esc(e.date)+"')\">"
         + '<span class="tw-date">'+esc(displayDate)+'</span>'
         + '<span class="tw-type '+typeClass+'">'+typeLabel+'</span>'
         + '<span class="tw-event">'+esc(e.desc)+'</span>'
