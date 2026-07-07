@@ -131,6 +131,22 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
 .section-card.welfare{border-color:#eef2ff}.section-card.welfare:hover{border-color:var(--p)}
 .section-card.retention{border-color:#ecfdf5}.section-card.retention:hover{border-color:#059669}
 .section-card.project{border-color:#fffbeb}.section-card.project:hover{border-color:#f59e0b}
+/* Timeline widget on section screen */
+#sectionScreen{flex-direction:column;gap:20px}
+.section-cards-row{display:flex;justify-content:center;align-items:center;gap:28px;flex-wrap:wrap}
+.timeline-widget{background:var(--card);border-radius:16px;padding:16px 20px;box-shadow:0 2px 12px rgba(0,0,0,.06);max-width:880px;width:100%}
+.timeline-widget .tw-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.timeline-widget .tw-title{font-size:14px;font-weight:700;color:var(--t)}
+.timeline-widget .tw-add{font-size:12px;padding:3px 10px;border:1px solid var(--p);color:var(--p);border-radius:6px;cursor:pointer;background:#fff;font-weight:600}
+.timeline-widget .tw-add:hover{background:var(--p);color:#fff}
+.timeline-widget .tw-items{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto}
+.timeline-widget .tw-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;font-size:13px;background:#f8f9fc;transition:.15s}
+.timeline-widget .tw-item:hover{background:#eef2ff}
+.timeline-widget .tw-date{font-weight:700;color:var(--p);min-width:42px;text-align:center;white-space:nowrap}
+.timeline-widget .tw-event{flex:1;color:var(--t2);line-height:1.4}
+.timeline-widget .tw-del{color:var(--t3);cursor:pointer;font-size:14px;padding:2px 4px;visibility:hidden}
+.timeline-widget .tw-item:hover .tw-del{visibility:visible}
+.timeline-widget .tw-empty{text-align:center;color:var(--t3);font-size:13px;padding:12px 0}
 /* Section badge */
 .section-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;user-select:none}
 .section-badge.welfare{background:#eef2ff;color:var(--p)}
@@ -174,20 +190,29 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
 
 <!-- 板块选择 -->
 <div id="sectionScreen">
-  <div class="section-card welfare" onclick="enterSection('welfare')">
-    <div class="sc-icon">🎮</div>
-    <div class="sc-title">福利官管理</div>
-    <div class="sc-desc">福利官配置、项目管理<br>更新计划、版本管理</div>
+  <div class="section-cards-row">
+    <div class="section-card welfare" onclick="enterSection('welfare')">
+      <div class="sc-icon">🎮</div>
+      <div class="sc-title">福利官管理</div>
+      <div class="sc-desc">福利官配置、项目管理<br>更新计划、版本管理</div>
+    </div>
+    <div class="section-card retention" onclick="enterSection('retention')">
+      <div class="sc-icon">🛡</div>
+      <div class="sc-title">维系配置</div>
+      <div class="sc-desc">专属池 / 专属推送 / 游戏盒子<br>链接库管理</div>
+    </div>
+    <div class="section-card project" onclick="enterSection('project_config')">
+      <div class="sc-icon">📋</div>
+      <div class="sc-title">项目配置</div>
+      <div class="sc-desc">项目ID、项目名称<br>管理所有项目信息</div>
+    </div>
   </div>
-  <div class="section-card retention" onclick="enterSection('retention')">
-    <div class="sc-icon">🛡</div>
-    <div class="sc-title">维系配置</div>
-    <div class="sc-desc">专属池 / 专属推送 / 游戏盒子<br>链接库管理</div>
-  </div>
-  <div class="section-card project" onclick="enterSection('project_config')">
-    <div class="sc-icon">📋</div>
-    <div class="sc-title">项目配置</div>
-    <div class="sc-desc">项目ID、项目名称<br>管理所有项目信息</div>
+  <div class="timeline-widget" id="timelineWidget">
+    <div class="tw-header">
+      <span class="tw-title">📅 近期事件</span>
+      <button class="tw-add" onclick="openTimelineEdit()">＋ 添加</button>
+    </div>
+    <div class="tw-items" id="timelineItems"></div>
   </div>
 </div>
 
@@ -287,8 +312,9 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
 <div id="projectConfigPage">
   <div style="padding:20px;overflow-x:auto">
     <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
-      <input type="text" id="projectSearch" placeholder="🔍 搜索项目ID、项目名称..." style="flex:1;min-width:200px;padding:9px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none" oninput="renderProjectConfigList()">
-      <span style="font-size:13px;color:var(--t3)">管理项目ID与名称</span>
+      <input type="text" id="projectSearch" placeholder="🔍 搜索项目ID、名称、负责组、负责人..." style="flex:1;min-width:200px;padding:9px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none" oninput="renderProjectConfigList()">
+      <button class="btn btn-p" id="btnAddProjectConfig" style="font-size:13px;padding:8px 16px;white-space:nowrap">＋ 添加项目</button>
+      <button class="btn btn-o" id="btnImportProjectConfig" style="font-size:13px;padding:8px 16px;white-space:nowrap">📥 批量导入</button>
     </div>
     <div id="projectConfigList"></div>
   </div>
@@ -406,6 +432,68 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
   <div class="mf">
     <button class="btn btn-o" onclick="closeOfficerImport()">取消</button>
     <button class="btn btn-p" id="btnDoOfficerImport">导入</button>
+  </div>
+</div>
+</div>
+
+<!-- 项目配置编辑弹窗 -->
+<div class="mo" id="projectConfigEditModal">
+<div class="md" style="max-width:480px">
+  <div class="hd"><span id="projectConfigEditTitle">添加项目</span><span class="x" onclick="closeProjectConfigEdit()">×</span></div>
+  <div class="mb">
+    <input type="hidden" id="projectConfigEditId">
+    <label>项目ID（铭文）*</label><input type="text" id="projectConfigProjectId" placeholder="例如：SHENQI_001">
+    <label>项目名称 *</label><input type="text" id="projectConfigProjectName" placeholder="例如：神泣">
+    <label>负责组</label>
+    <select id="projectConfigGroup" style="width:100%;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;outline:none">
+      <option value="">— 未选择 —</option>
+      <option value="A">A组</option>
+      <option value="B">B组</option>
+      <option value="C">C组</option>
+      <option value="SH">上海组</option>
+    </select>
+    <label>负责人</label><input type="text" id="projectConfigPerson" placeholder="负责人姓名">
+  </div>
+  <div class="mf">
+    <button class="btn btn-o" onclick="closeProjectConfigEdit()">取消</button>
+    <button class="btn btn-p" id="btnSaveProjectConfig">保存</button>
+  </div>
+</div>
+</div>
+
+<!-- 项目配置批量导入弹窗 -->
+<div class="mo" id="projectConfigImportModal">
+<div class="md">
+  <div class="hd"><span>📥 项目批量导入</span><span class="x" onclick="closeProjectConfigImport()">×</span></div>
+  <div class="mb">
+    <p style="font-size:13px;color:var(--t2);margin-bottom:10px">支持 Excel 复制粘贴（制表符）或 CSV 格式。</p>
+    <p style="font-size:12px;color:var(--t3);margin-bottom:8px">字段顺序：项目ID | 项目名称 | 负责组 | 负责人<br><span style="color:var(--p)">负责组填 A/B/C/SH，留空则不设组</span></p>
+    <textarea id="projectConfigImportText" style="width:100%;min-height:120px;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:13px;outline:none;font-family:inherit;resize:vertical;margin-bottom:12px"
+      placeholder='SHENQI_001	神泣	A	张三
+XCB_002	星辰变	B	李四'></textarea>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-o" onclick="pasteProjectConfigImport()">📋 从剪贴板粘贴</button>
+    </div>
+  </div>
+  <div class="mf">
+    <button class="btn btn-o" onclick="closeProjectConfigImport()">取消</button>
+    <button class="btn btn-p" id="btnDoProjectConfigImport">导入</button>
+  </div>
+</div>
+</div>
+
+<!-- 添加近期事件弹窗 -->
+<div class="mo" id="timelineEditModal">
+<div class="md" style="max-width:480px">
+  <div class="hd"><span id="timelineEditTitle">添加近期事件</span><span class="x" onclick="closeTimelineEdit()">×</span></div>
+  <div class="mb">
+    <input type="hidden" id="timelineEditId">
+    <label>日期 *</label><input type="date" id="timelineDate">
+    <label>事件描述 *</label><input type="text" id="timelineEvent" placeholder="例如：墨香的福利官要更新版本到V3">
+  </div>
+  <div class="mf">
+    <button class="btn btn-o" onclick="closeTimelineEdit()">取消</button>
+    <button class="btn btn-p" id="btnSaveTimeline">保存</button>
   </div>
 </div>
 </div>
@@ -784,6 +872,8 @@ var PLAN_KEY = 'gw_plans';  // 更新计划：上线 + 版更
 var LAUNCH_REMINDER_KEY = 'gw_launch_reminded';
 var VERSION_KEY = 'gw_versions';
 var LINK_KEY = 'gw_link_lib';  // 链接库
+var PROJECT_CONFIG_KEY = 'gw_project_configs';  // 项目配置（ID/名称/负责组/负责人）
+var TIMELINE_KEY = 'gw_timeline';  // 近期事件时间线
 var RETENTION_GROUPS = [
   {key:'A', label:'A组', color:'#3b82f6'},
   {key:'B', label:'B组', color:'#16a34a'},
@@ -830,7 +920,7 @@ function showPage(name){
   $('projectConfigPage').classList.remove('active');
   if(name==='setup') $('setupPage').classList.add('active');
   if(name==='login') $('loginPage').classList.add('active');
-  if(name==='section') $('sectionScreen').classList.add('active');
+  if(name==='section'){ $('sectionScreen').classList.add('active'); renderTimeline(); }
   if(name==='main'){ $('mainPage').classList.add('active'); }
 }
 
@@ -845,7 +935,7 @@ function enterSection(section){
   $('retentionBtns').style.display = section==='retention' ? '' : 'none';
   $('projectConfigBtns').style.display = section==='project_config' ? '' : 'none';
   $('spGroup').style.display = section==='welfare' ? '' : 'none';
-  $('btnAdd').style.display = section==='welfare'||section==='project_config' ? '' : 'none';
+  $('btnAdd').style.display = section==='welfare' ? '' : 'none';
   $('btnSync').style.display = section==='welfare'||section==='retention' ? '' : 'none';
   // Search placeholder
   if(section==='welfare') $('searchInput').placeholder = '🔍 搜索游戏名称、福利官...';
@@ -874,12 +964,90 @@ function enterSection(section){
   }
 }
 
+/* ════════════════════ TIMELINE ════════════════════ */
+function formatTimelineDate(d){
+  var dt = new Date(d + 'T00:00:00');
+  var m = dt.getMonth() + 1;
+  var day = dt.getDate();
+  return m + '/' + day;
+}
+
+function renderTimeline(){
+  var items = getTimeline();
+  var now = new Date();
+  var cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3);
+  // Filter out expired (3+ days after date)
+  var active = items.filter(function(e){
+    return new Date(e.date + 'T00:00:00') >= cutoff;
+  });
+  if(active.length !== items.length) saveTimeline(active);
+  // Sort by date ascending
+  active.sort(function(a,b){ return (a.date||'').localeCompare(b.date||'') });
+  var html = '';
+  if(active.length===0){
+    html = '<div class="tw-empty">暂无近期事件，点击「＋ 添加」创建提醒</div>';
+  } else {
+    for(var i=0;i<active.length;i++){
+      var e = active[i];
+      var displayDate = formatTimelineDate(e.date);
+      html += '<div class="tw-item">'
+        + '<span class="tw-date">'+esc(displayDate)+'</span>'
+        + '<span class="tw-event">'+esc(e.event||'')+'</span>'
+        + '<span class="tw-del" onclick="event.stopPropagation();deleteTimeline(\''+e.id+'\')" title="删除">×</span>'
+        + '</div>';
+    }
+  }
+  var el = $('timelineItems');
+  if(el) el.innerHTML = html;
+}
+
+function openTimelineEdit(id){
+  var items = getTimeline();
+  var e = id ? items.find(function(x){ return x.id===id }) : null;
+  $('timelineEditTitle').textContent = e ? '编辑事件' : '添加近期事件';
+  $('timelineEditId').value = e ? e.id : '';
+  $('timelineDate').value = e ? e.date : '';
+  $('timelineEvent').value = e ? (e.event||'') : '';
+  $('timelineEditModal').classList.add('active');
+}
+function closeTimelineEdit(){
+  $('timelineEditModal').classList.remove('active');
+}
+
+$('btnSaveTimeline').addEventListener('click', function(){
+  var id = $('timelineEditId').value.trim();
+  var date = $('timelineDate').value.trim();
+  var event = $('timelineEvent').value.trim();
+  if(!date){ toast('请选择日期','er'); return; }
+  if(!event){ toast('请输入事件描述','er'); return; }
+  var items = getTimeline();
+  if(id){
+    var idx = items.findIndex(function(x){ return x.id===id });
+    if(idx>=0){ items[idx].date = date; items[idx].event = event; }
+  } else {
+    items.push({ id: 'tl_'+Date.now(), date: date, event: event });
+  }
+  saveTimeline(items);
+  closeTimelineEdit();
+  toast('已保存','ok');
+  renderTimeline();
+});
+
+function deleteTimeline(id){
+  if(!confirm('删除该事件？')) return;
+  var items = getTimeline();
+  items = items.filter(function(x){ return x.id!==id });
+  saveTimeline(items);
+  renderTimeline();
+}
+
 function goBackToSection(){
   currentSection = null;
   $('mainPage').classList.remove('active');
   $('retentionPage').classList.remove('active');
   $('projectConfigPage').classList.remove('active');
   $('sectionScreen').classList.add('active');
+  renderTimeline();
 }
 
 function formatAmount(val){
@@ -1165,6 +1333,19 @@ function getLinks(){
   try{ return JSON.parse(localStorage.getItem(LINK_KEY)) || [] }catch(e){ return [] }
 }
 function saveLinks(arr){ localStorage.setItem(LINK_KEY, JSON.stringify(arr)) }
+/* Project Configs */
+function getProjectConfigs(){
+  try{ return JSON.parse(localStorage.getItem(PROJECT_CONFIG_KEY)) || [] }catch(e){ return [] }
+}
+function saveProjectConfigs(arr){ localStorage.setItem(PROJECT_CONFIG_KEY, JSON.stringify(arr)) }
+function getProjectConfigById(id){
+  return getProjectConfigs().find(function(p){ return p.id===id });
+}
+/* Timeline */
+function getTimeline(){
+  try{ return JSON.parse(localStorage.getItem(TIMELINE_KEY)) || [] }catch(e){ return [] }
+}
+function saveTimeline(arr){ localStorage.setItem(TIMELINE_KEY, JSON.stringify(arr)) }
 function getLinksByGroup(groupKey){
   return getLinks().filter(function(l){ return l.group === groupKey });
 }
@@ -3358,40 +3539,57 @@ $('btnSaveRetention').addEventListener('click', function(){
 });
 
 /* ════════════════════ PROJECT CONFIG ════════════════════ */
+/* Get group label/color */
+function getGroupInfo(key){
+  var g = RETENTION_GROUPS.find(function(r){ return r.key===key });
+  return g || {key:key, label:key||'-', color:'#888'};
+}
+
+/* Export */
 $('btnProjectExport').addEventListener('click', function(){
-  var games = getData();
-  var exportData = games.map(function(g){
-    return { project_id: g.project_id||'', game_name: g.game_name, id: g.id };
+  var configs = getProjectConfigs();
+  var exportData = configs.map(function(p){
+    return { project_id: p.project_id, project_name: p.project_name, group: p.group||'', person: p.person||'' };
   });
   var blob = new Blob([JSON.stringify(exportData, null, 2)], {type:'application/json'});
   var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'project_config.json'; a.click();
   toast('已导出','ok');
 });
 
+/* Render */
 function renderProjectConfigList(){
-  var games = getData();
+  var configs = getProjectConfigs();
   var kw = ($('projectSearch') ? $('projectSearch').value : '').trim().toLowerCase();
   if(kw){
-    games = games.filter(function(g){
-      return (g.game_name||'').toLowerCase().indexOf(kw)>=0 || (g.project_id||'').toLowerCase().indexOf(kw)>=0;
+    configs = configs.filter(function(p){
+      return (p.project_id||'').toLowerCase().indexOf(kw)>=0
+        || (p.project_name||'').toLowerCase().indexOf(kw)>=0
+        || (p.group||'').toLowerCase().indexOf(kw)>=0
+        || (p.person||'').toLowerCase().indexOf(kw)>=0;
     });
   }
   var html = '';
-  if(games.length===0){
-    html = '<div style="padding:20px;color:var(--t3);text-align:center">暂无项目，点击「＋ 添加」创建</div>';
+  if(configs.length===0){
+    html = '<div style="padding:20px;color:var(--t3);text-align:center">暂无项目，点击「＋ 添加项目」创建</div>';
   } else {
     html = '<table class="ot" id="projectConfigTable"><thead><tr>'
-      +'<th style="min-width:160px">项目名称<div class="resize-handle"></div></th>'
       +'<th style="min-width:140px">项目ID（铭文）<div class="resize-handle"></div></th>'
+      +'<th style="min-width:140px">项目名称<div class="resize-handle"></div></th>'
+      +'<th style="min-width:100px">负责组<div class="resize-handle"></div></th>'
+      +'<th style="min-width:100px">负责人<div class="resize-handle"></div></th>'
       +'<th style="width:80px;min-width:80px">操作<div class="resize-handle"></div></th>'
       +'</tr></thead><tbody>';
-    for(var i=0;i<games.length;i++){
-      var g = games[i];
+    for(var i=0;i<configs.length;i++){
+      var p = configs[i];
+      var gi = getGroupInfo(p.group);
       html += '<tr>'
-        + '<td style="font-weight:600">'+esc(g.game_name||'-')+'</td>'
-        + '<td class="mono">'+esc(g.project_id||'-')+'</td>'
+        + '<td class="mono">'+esc(p.project_id||'-')+'</td>'
+        + '<td style="font-weight:600">'+esc(p.project_name||'-')+'</td>'
+        + '<td>'+(p.group ? '<span style="display:inline-block;padding:2px 10px;background:'+gi.color+'15;color:'+gi.color+';border-radius:12px;font-size:12px;font-weight:600">'+esc(gi.label)+'</span>' : '<span style="color:var(--t3)">-</span>')+'</td>'
+        + '<td>'+esc(p.person||'-')+'</td>'
         + '<td class="act" style="white-space:nowrap">'
-        + '<button class="btn-sm pri" onclick="event.stopPropagation();editProjectConfig(\''+g.id+'\')" style="font-size:12px;padding:4px 10px">编辑ID</button>'
+        + '<button class="btn-sm pri" onclick="event.stopPropagation();openProjectConfigEdit(\''+p.id+'\')" style="font-size:12px;padding:4px 10px">编辑</button>'
+        + '<button class="btn-sm" onclick="event.stopPropagation();deleteProjectConfig(\''+p.id+'\')" style="font-size:12px;padding:4px 10px;border-color:var(--d);color:var(--d)">删除</button>'
         + '</td>'
         + '</tr>';
     }
@@ -3401,19 +3599,113 @@ function renderProjectConfigList(){
   initColumnResize();
 }
 
-function editProjectConfig(gameId){
-  var g = getGameById(gameId);
-  if(!g) return;
-  var newId = prompt('编辑项目ID（铭文）：', g.project_id||'');
-  if(newId===null) return;
-  g.project_id = newId.trim();
-  var games = getData();
-  var idx = games.findIndex(function(x){ return x.id===gameId });
-  if(idx>=0) games[idx] = g;
-  saveData(games);
-  toast('项目ID已更新');
+/* Open add/edit modal */
+function openProjectConfigEdit(id){
+  var configs = getProjectConfigs();
+  var p = id ? configs.find(function(x){ return x.id===id }) : null;
+  $('projectConfigEditTitle').textContent = p ? '编辑项目' : '添加项目';
+  $('projectConfigEditId').value = p ? p.id : '';
+  $('projectConfigProjectId').value = p ? (p.project_id||'') : '';
+  $('projectConfigProjectName').value = p ? (p.project_name||'') : '';
+  $('projectConfigGroup').value = p ? (p.group||'') : '';
+  $('projectConfigPerson').value = p ? (p.person||'') : '';
+  $('projectConfigEditModal').classList.add('active');
+}
+function closeProjectConfigEdit(){
+  $('projectConfigEditModal').classList.remove('active');
+}
+
+/* Save */
+$('btnSaveProjectConfig').addEventListener('click', function(){
+  var id = $('projectConfigEditId').value.trim();
+  var projectId = $('projectConfigProjectId').value.trim();
+  var projectName = $('projectConfigProjectName').value.trim();
+  var group = $('projectConfigGroup').value;
+  var person = $('projectConfigPerson').value.trim();
+  if(!projectId){ toast('请输入项目ID','er'); return; }
+  if(!projectName){ toast('请输入项目名称','er'); return; }
+  var configs = getProjectConfigs();
+  if(id){
+    var idx = configs.findIndex(function(x){ return x.id===id });
+    if(idx>=0){
+      configs[idx].project_id = projectId;
+      configs[idx].project_name = projectName;
+      configs[idx].group = group;
+      configs[idx].person = person;
+    }
+  } else {
+    configs.push({
+      id: 'pc_'+Date.now(),
+      project_id: projectId,
+      project_name: projectName,
+      group: group,
+      person: person
+    });
+  }
+  saveProjectConfigs(configs);
+  closeProjectConfigEdit();
+  toast('已保存','ok');
+  renderProjectConfigList();
+});
+
+/* Delete */
+function deleteProjectConfig(id){
+  if(!confirm('确定删除该项目配置？')) return;
+  var configs = getProjectConfigs();
+  configs = configs.filter(function(x){ return x.id!==id });
+  saveProjectConfigs(configs);
+  toast('已删除','ok');
   renderProjectConfigList();
 }
+
+/* Add button */
+$('btnAddProjectConfig').addEventListener('click', function(){
+  openProjectConfigEdit(null);
+});
+
+/* Import modal */
+$('btnImportProjectConfig').addEventListener('click', function(){
+  $('projectConfigImportModal').classList.add('active');
+  $('projectConfigImportText').value = '';
+});
+function closeProjectConfigImport(){
+  $('projectConfigImportModal').classList.remove('active');
+}
+function pasteProjectConfigImport(){
+  if(!navigator.clipboard){ toast('当前环境不支持剪贴板','er'); return; }
+  navigator.clipboard.readText().then(function(t){ $('projectConfigImportText').value = t; });
+}
+
+/* Do import */
+$('btnDoProjectConfigImport').addEventListener('click', function(){
+  var t = $('projectConfigImportText').value.trim();
+  if(!t){ toast('请粘贴数据','er'); return; }
+  var lines = t.split(/\n/).filter(function(l){ return l.trim(); });
+  var configs = getProjectConfigs();
+  var added = 0;
+  for(var i=0;i<lines.length;i++){
+    var parts = lines[i].split(/\t|,/);
+    var projectId = (parts[0]||'').trim();
+    var projectName = (parts[1]||'').trim();
+    var group = (parts[2]||'').trim();
+    var person = (parts[3]||'').trim();
+    if(!projectId || !projectName) continue;
+    var validGroups = ['A','B','C','SH'];
+    if(group && validGroups.indexOf(group)===-1) group = '';
+    configs.push({
+      id: 'pc_'+Date.now()+'_'+i,
+      project_id: projectId,
+      project_name: projectName,
+      group: group,
+      person: person
+    });
+    added++;
+  }
+  saveProjectConfigs(configs);
+  closeProjectConfigImport();
+  toast('成功导入 '+added+' 个项目','ok');
+  renderProjectConfigList();
+});
 
 /* ════════════════════ GITHUB SYNC ════════════════════ */
 function getGitToken(){
@@ -3441,7 +3733,9 @@ function doSync(token){
     officers: getOfficers(),
     plans: getPlans(),
     versions: getVersions(),
-    links: getLinks()
+    links: getLinks(),
+    projectConfigs: getProjectConfigs(),
+    timeline: getTimeline()
   };
   var content = JSON.stringify(data);
   var base64 = btoa(unescape(encodeURIComponent(content)));
