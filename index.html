@@ -1022,6 +1022,9 @@ function gotoWelfareGame(gameId, date){
   $('projectConfigPage').classList.remove('active');
   $('sectionScreen').classList.remove('active');
   $('mainPage').classList.add('active');
+  $('sectionBadgeWelfare').style.display = '';
+  $('sectionBadgeRetention').style.display = 'none';
+  $('sectionBadgeProject').style.display = 'none';
   $('officerStats').style.display = '';
   $('gameTable').parentNode.style.display = '';
   $('btnAdd').style.display = '';
