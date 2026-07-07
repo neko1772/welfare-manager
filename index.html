@@ -120,6 +120,30 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
 .rt-tab-panel.active{display:block}
 .rt-link-box{background:#f8f9fc;border:1.5px dashed #d0d5dd;border-radius:8px;padding:8px 12px;font-size:13px;font-family:monospace;color:var(--t2);display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px}
 .rt-link-box .copy-btn{font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid var(--p);color:var(--p);cursor:pointer;white-space:nowrap;background:#fff}
+/* Section Selection */
+#sectionScreen{display:none;justify-content:center;align-items:center;min-height:100vh;padding:40px 20px;gap:28px;flex-wrap:wrap}
+#sectionScreen.active{display:flex}
+.section-card{background:var(--card);border-radius:20px;padding:40px 36px;box-shadow:0 8px 32px rgba(0,0,0,.08);width:280px;text-align:center;cursor:pointer;transition:.2s;border:2px solid transparent}
+.section-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.14)}
+.section-card .sc-icon{font-size:48px;margin-bottom:16px}
+.section-card .sc-title{font-size:20px;font-weight:700;margin-bottom:8px}
+.section-card .sc-desc{font-size:13px;color:var(--t3);line-height:1.6}
+.section-card.welfare{border-color:#eef2ff}.section-card.welfare:hover{border-color:var(--p)}
+.section-card.retention{border-color:#ecfdf5}.section-card.retention:hover{border-color:#059669}
+.section-card.project{border-color:#fffbeb}.section-card.project:hover{border-color:#f59e0b}
+/* Section badge */
+.section-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;user-select:none}
+.section-badge.welfare{background:#eef2ff;color:var(--p)}
+.section-badge.retention{background:#ecfdf5;color:#059669}
+.section-badge.project{background:#fffbeb;color:#d97706}
+/* Retention page */
+#retentionPage{display:none}#retentionPage.active{display:block}
+#projectConfigPage{display:none}#projectConfigPage.active{display:block}
+/* Platform badges */
+.platform-badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600}
+.platform-badge.p39{background:#dbeafe;color:#2563eb}
+.platform-badge.huanyu{background:#dcfce7;color:#16a34a}
+.platform-badge.qilong{background:#ede9fe;color:#7c3aed}
 </style>
 </head>
 <body>
@@ -148,28 +172,61 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
 </div>
 </div>
 
+<!-- 板块选择 -->
+<div id="sectionScreen">
+  <div class="section-card welfare" onclick="enterSection('welfare')">
+    <div class="sc-icon">🎮</div>
+    <div class="sc-title">福利官管理</div>
+    <div class="sc-desc">福利官配置、项目管理<br>更新计划、版本管理</div>
+  </div>
+  <div class="section-card retention" onclick="enterSection('retention')">
+    <div class="sc-icon">🛡</div>
+    <div class="sc-title">维系配置</div>
+    <div class="sc-desc">专属池 / 专属推送 / 游戏盒子<br>链接库管理</div>
+  </div>
+  <div class="section-card project" onclick="enterSection('project_config')">
+    <div class="sc-icon">📋</div>
+    <div class="sc-title">项目配置</div>
+    <div class="sc-desc">项目ID、项目名称<br>管理所有项目信息</div>
+  </div>
+</div>
+
 <!-- 主界面 -->
 <div id="mainPage">
-  <div class="tb">
-    <span id="titleBtn" style="font-size:18px;font-weight:700;cursor:pointer;user-select:none">🎮 福利官与维系</span>
-    <input type="text" id="searchInput" placeholder="🔍 搜索游戏名称、福利官...">
+  <div class="tb" id="mainToolbar">
+    <!-- Section badge + back -->
+    <span class="section-badge welfare" id="sectionBadgeWelfare" onclick="goBackToSection()">🎮 福利官管理 ↺</span>
+    <span class="section-badge retention" id="sectionBadgeRetention" onclick="goBackToSection()" style="display:none">🛡 维系配置 ↺</span>
+    <span class="section-badge project" id="sectionBadgeProject" onclick="goBackToSection()" style="display:none">📋 项目配置 ↺</span>
+    <!-- Common -->
+    <input type="text" id="searchInput" placeholder="🔍 搜索...">
     <span class="count" id="countLabel"></span>
-    <div class="sp-group">
+    <div class="sp-group" id="spGroup">
       <span data-sp="6px" id="spS">S</span>
       <span data-sp="12px" id="spM" class="active">M</span>
       <span data-sp="20px" id="spL">L</span>
     </div>
     <button class="btn-sm pri" id="btnPwd">🔑 改密码</button>
-    <button class="btn-sm pri" id="btnOfficerLib">👤 福利官库</button>
-    <button class="btn-sm pri" id="btnDownloadTemplate">📥 下载导入模板</button>
-    <button class="btn-sm pri" id="btnImport">📂 导入</button>
-    <button class="btn-sm pri" id="btnExport">📤 导出</button>
+    <!-- Welfare-only -->
+    <span id="welfareBtns">
+      <button class="btn-sm pri" id="btnOfficerLib">👤 福利官库</button>
+      <button class="btn-sm pri" id="btnDownloadTemplate">📥 下载导入模板</button>
+      <button class="btn-sm pri" id="btnImport">📂 导入</button>
+      <button class="btn-sm pri" id="btnExport">📤 导出</button>
+      <button class="btn-sm pri" id="btnOfficerView">📋 福利官视图</button>
+      <button class="btn-sm" id="btnLaunch" style="border-color:#8b5cf6;color:#7c3aed">📅 更新计划</button>
+      <button class="btn-sm" id="btnVersion" style="border-color:#0891b2;color:#0891b2">🏷 版本管理</button>
+    </span>
+    <!-- Retention-only -->
+    <span id="retentionBtns" style="display:none">
+      <button class="btn-sm pri" id="btnRetentionView" style="border-color:#059669;color:#059669">📊 维系总览</button>
+      <button class="btn-sm" id="btnLinkLib" style="border-color:#dc2626;color:#dc2626">🔗 链接库</button>
+    </span>
+    <!-- Project Config-only -->
+    <span id="projectConfigBtns" style="display:none">
+      <button class="btn-sm pri" id="btnProjectExport">📤 导出</button>
+    </span>
     <button class="btn-sm" id="btnSync" style="border-color:#f59e0b;color:#d97706">📱 同步到手机</button>
-    <button class="btn-sm pri" id="btnOfficerView">📋 福利官视图</button>
-    <button class="btn-sm" id="btnLaunch" style="border-color:#8b5cf6;color:#7c3aed">📅 更新计划</button>
-    <button class="btn-sm" id="btnVersion" style="border-color:#0891b2;color:#0891b2">🏷 版本管理</button>
-    <button class="btn-sm" id="btnRetention" style="border-color:#059669;color:#059669">🛡 维系配置</button>
-    <button class="btn-sm" id="btnLinkLib" style="border-color:#dc2626;color:#dc2626">🔗 链接库</button>
     <button class="btn-sm" id="btnLogout">退出</button>
     <button class="btn-sm" id="delModeBadge" style="display:none;border-color:var(--d);color:var(--d);font-weight:700" onclick="disableDeleteMode()">🔒 删除模式（点此关闭）</button>
     <button class="btn btn-p" id="btnAdd" style="white-space:nowrap">＋ 添加</button>
@@ -212,6 +269,28 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
       <tbody id="tbody"></tbody>
     </table>
     <div class="empty" id="emptyState">暂无数据，点击「＋ 添加」开始录入</div>
+  </div>
+</div>
+
+<!-- 维系配置页面（完整独立页面） -->
+<div id="retentionPage">
+  <div style="padding:20px;overflow-x:auto">
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+      <input type="text" id="retentionSearch" placeholder="🔍 搜索项目名、专属组、条件..." style="flex:1;min-width:200px;padding:9px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none" oninput="renderRetentionList()">
+      <span style="font-size:13px;color:var(--t3)">按项目维度管理维系配置</span>
+    </div>
+    <div id="retentionList"></div>
+  </div>
+</div>
+
+<!-- 项目配置页面 -->
+<div id="projectConfigPage">
+  <div style="padding:20px;overflow-x:auto">
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+      <input type="text" id="projectSearch" placeholder="🔍 搜索项目ID、项目名称..." style="flex:1;min-width:200px;padding:9px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none" oninput="renderProjectConfigList()">
+      <span style="font-size:13px;color:var(--t3)">管理项目ID与名称</span>
+    </div>
+    <div id="projectConfigList"></div>
   </div>
 </div>
 
@@ -529,6 +608,13 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
   <div class="hd"><span id="linkEditTitle">添加链接</span><span class="x" onclick="closeLinkEdit()">×</span></div>
   <div class="mb">
     <input type="hidden" id="linkEditId">
+    <label>平台 *</label>
+    <select id="linkPlatform" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;margin-bottom:12px">
+      <option value="">— 选择平台 —</option>
+      <option value="39">三九 (39)</option>
+      <option value="欢娱">欢娱</option>
+      <option value="七龙">七龙</option>
+    </select>
     <label>专属组 *</label>
     <select id="linkGroup" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;margin-bottom:12px">
       <option value="">— 选择组 —</option>
@@ -608,8 +694,23 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
     </div>
     <!-- 专属推送 -->
     <div class="rt-tab-panel" id="rtPanelPush">
+      <label>匹配专属组 *</label>
+      <select id="rtPushGroup" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;margin-bottom:8px" onchange="onRtPushGroupChange()">
+        <option value="">— 选择组 —</option>
+        <option value="A">A组</option>
+        <option value="B">B组</option>
+        <option value="C">C组</option>
+        <option value="SH">上海组</option>
+      </select>
       <label>人工校验条件 <span style="color:var(--t3);font-weight:400">（描述推送筛选条件）</span></label>
       <textarea id="rtPushConditions" placeholder="例如：客户服务筛选出的达标用户，累充≥3000且近7天活跃" rows="3"></textarea>
+      <div id="rtPushLinkInfo" style="display:none">
+        <label>完整短链（专属推送使用）</label>
+        <div class="rt-link-box">
+          <span id="rtPushFullLink">—</span>
+          <span class="copy-btn" onclick="copyText(document.getElementById('rtPushFullLink').textContent)">📋 复制</span>
+        </div>
+      </div>
       <label>备注</label>
       <textarea id="rtPushNotes" placeholder="备注信息" rows="2"></textarea>
     </div>
@@ -718,13 +819,94 @@ function simpleHash(str){
 }
 
 /* ════════════════════ PAGE SHOW ════════════════════ */
+var currentSection = null;  // 'welfare' | 'retention' | 'project_config'
+
 function showPage(name){
   $('setupPage').classList.remove('active');
   $('loginPage').classList.remove('active');
+  $('sectionScreen').classList.remove('active');
   $('mainPage').classList.remove('active');
+  $('retentionPage').classList.remove('active');
+  $('projectConfigPage').classList.remove('active');
   if(name==='setup') $('setupPage').classList.add('active');
   if(name==='login') $('loginPage').classList.add('active');
-  if(name==='main') $('mainPage').classList.add('active');
+  if(name==='section') $('sectionScreen').classList.add('active');
+  if(name==='main'){ $('mainPage').classList.add('active'); }
+}
+
+function enterSection(section){
+  currentSection = section;
+  // Update section badges
+  $('sectionBadgeWelfare').style.display = section==='welfare' ? '' : 'none';
+  $('sectionBadgeRetention').style.display = section==='retention' ? '' : 'none';
+  $('sectionBadgeProject').style.display = section==='project_config' ? '' : 'none';
+  // Update toolbar sections
+  $('welfareBtns').style.display = section==='welfare' ? '' : 'none';
+  $('retentionBtns').style.display = section==='retention' ? '' : 'none';
+  $('projectConfigBtns').style.display = section==='project_config' ? '' : 'none';
+  $('spGroup').style.display = section==='welfare' ? '' : 'none';
+  $('btnAdd').style.display = section==='welfare'||section==='project_config' ? '' : 'none';
+  $('btnSync').style.display = section==='welfare'||section==='retention' ? '' : 'none';
+  // Search placeholder
+  if(section==='welfare') $('searchInput').placeholder = '🔍 搜索游戏名称、福利官...';
+  else if(section==='retention') $('searchInput').placeholder = '🔍 搜索项目名、专属组、条件...';
+  else $('searchInput').placeholder = '🔍 搜索项目ID、项目名称...';
+  $('searchInput').oninput = section==='retention' ? function(){renderRetentionList()} : (section==='project_config' ? function(){renderProjectConfigList()} : function(){render()});
+  // Hide all content views
+  $('officerStats').style.display = 'none';
+  $('gameTable').parentNode.style.display = 'none';
+  $('retentionPage').classList.remove('active');
+  $('projectConfigPage').classList.remove('active');
+  // Show section content
+  if(section==='welfare'){
+    $('officerStats').style.display = '';
+    $('gameTable').parentNode.style.display = '';
+    showPage('main');
+    render();
+  } else if(section==='retention'){
+    $('retentionPage').classList.add('active');
+    showPage('main');
+    renderRetentionList();
+  } else if(section==='project_config'){
+    $('projectConfigPage').classList.add('active');
+    showPage('main');
+    renderProjectConfigList();
+  }
+}
+
+function goBackToSection(){
+  currentSection = null;
+  $('mainPage').classList.remove('active');
+  $('retentionPage').classList.remove('active');
+  $('projectConfigPage').classList.remove('active');
+  $('sectionScreen').classList.add('active');
+}
+
+function formatAmount(val){
+  if(!val && val!==0) return '0';
+  var s = String(val).trim();
+  if(!s) return '0';
+  var num = parseInt(s.replace(/[^0-9]/g,''),10);
+  if(isNaN(num) || num===0) return '0';
+  if(num>=10000) return (num/10000) + 'w';
+  if(num>=1000) return (num/1000) + 'k';
+  return String(num);
+}
+
+function formatPoolRecharge(val){
+  // "≥10000" → "1w", "≥5000" → "5k", "" → "-"
+  if(!val || !String(val).trim()) return '-';
+  var f = formatAmount(val);
+  return f==='0' ? '-' : f;
+}
+
+function formatPoolCycle(val){
+  // "30天" → "30Day", "60天" → "60Day"
+  if(!val) return '-';
+  var s = String(val).trim();
+  var num = parseInt(s.replace(/[^0-9]/g,''),10);
+  if(isNaN(num) || num===0) return '-';
+  return num + 'Day';
 }
 
 /* ════════════════════ SESSION ════════════════════ */
@@ -754,8 +936,8 @@ function init(){
     localStorage.setItem(ADMIN_KEY, simpleHash('79528'));
   }
   var pwd = localStorage.getItem(PWD_KEY);
-  if(!pwd) showPage('setup'); else if(hasSession()) showPage('main'); else showPage('login');
-  if(hasSession()){ render(); checkLaunchReminders(); }
+  if(!pwd) showPage('setup'); else if(hasSession()) showPage('section'); else showPage('login');
+  if(hasSession()){ checkLaunchReminders(); }
 }
 
 /* ════════════════════ SETUP ════════════════════ */
@@ -767,8 +949,7 @@ $('setupBtn').addEventListener('click', function(){
   localStorage.setItem(PWD_KEY, simpleHash(p1));
   createSession();
   toast('密码设置成功','ok');
-  showPage('main');
-  render();
+  showPage('section');
 });
 
 /* ════════════════════ LOGIN ════════════════════ */
@@ -779,19 +960,20 @@ $('loginBtn').addEventListener('click', function(){
     err.textContent='密码错误'; return;
   }
   createSession();
-  showPage('main');
-  render();
+  showPage('section');
 });
 $('lp').addEventListener('keydown', function(e){ if(e.key==='Enter') $('loginBtn').click() });
 
 /* ════════════════════ LOGOUT ════════════════════ */
 $('btnLogout').addEventListener('click', function(){
   clearSession();
+  currentSection = null;
+  $('retentionPage').classList.remove('active');
+  $('projectConfigPage').classList.remove('active');
   showPage('login'); $('lp').value=''; $('le').textContent='';
 });
 
-/* Hidden trigger: double-click title to enable delete mode */
-$('titleBtn').addEventListener('dblclick', enableDeleteMode);
+/* Hidden trigger removed - use delete mode via button */
 
 /* ════════════════════ PASSWORD MODAL ════════════════════ */
 function openPwdModal(){
@@ -986,6 +1168,21 @@ function saveLinks(arr){ localStorage.setItem(LINK_KEY, JSON.stringify(arr)) }
 function getLinksByGroup(groupKey){
   return getLinks().filter(function(l){ return l.group === groupKey });
 }
+function getLinksByPlatformGroup(platform, groupKey){
+  return getLinks().filter(function(l){ return l.platform === platform && l.group === groupKey });
+}
+function getPlatformLabel(p){
+  if(p==='39') return '三九';
+  if(p==='欢娱') return '欢娱';
+  if(p==='七龙') return '七龙';
+  return p||'-';
+}
+function getPlatformClass(p){
+  if(p==='39') return 'p39';
+  if(p==='欢娱') return 'huanyu';
+  if(p==='七龙') return 'qilong';
+  return '';
+}
 function getGroupInfo(key){
   for(var i=0;i<RETENTION_GROUPS.length;i++){
     if(RETENTION_GROUPS[i].key===key) return RETENTION_GROUPS[i];
@@ -997,18 +1194,18 @@ function getRetention(game){
   return (game && game.retention) ? game.retention : {};
 }
 function getRetentionSummary(ret, dir){
-  /* dir: 'pool' | 'push' | 'box' */
   if(!ret || !ret[dir]) return null;
   var c = ret[dir];
   if(dir==='pool'){
-    var parts = [];
-    if(c.cumulative_recharge) parts.push(c.cumulative_recharge);
-    if(c.recharge_cycle) parts.push(c.recharge_cycle);
-    if(c.cycle_recharge_amount) parts.push(c.cycle_recharge_amount);
-    return { group: c.group||'', condition: parts.join('/'), link_suffix: c.link_suffix||'', full_link: c.full_link||'' };
+    var r = formatPoolRecharge(c.cumulative_recharge);
+    var cy = formatPoolCycle(c.recharge_cycle);
+    var ca = formatPoolRecharge(c.cycle_recharge_amount);
+    var cond = r+'/'+cy+'/'+ca;
+    return { group: c.group||'', condition: cond, link_suffix: c.link_suffix||'', full_link: c.full_link||'' };
   }
   if(dir==='push'){
-    return { group: c.group||'', condition: c.conditions||'', notes: c.notes||'' };
+    var pushCond = c.conditions||'';
+    return { group: c.group||'', condition: pushCond, full_link: c.full_link||'', notes: c.notes||'' };
   }
   if(dir==='box'){
     return { group: c.group||'', condition: c.conditions||'', full_link: c.full_link||'', notes: c.notes||'' };
@@ -1366,6 +1563,7 @@ function render(){
   if(kw){
     games = games.filter(function(g){
       if((g.game_name||'').toLowerCase().indexOf(kw)>=0) return true;
+      if((g.project_id||'').toLowerCase().indexOf(kw)>=0) return true;
       var verObj = g.version_id ? getVersionById(g.version_id) : null;
       if(verObj && (verObj.name+' '+verObj.desc).toLowerCase().indexOf(kw)>=0) return true;
       var seqs = g.officer_seqs||{};
@@ -2815,11 +3013,14 @@ function closeLinkEdit(){ $('linkEditModal').classList.remove('active') }
 
 function renderLinkLibList(){
   var links = getLinks();
+  // Sort: platform, group
+  links.sort(function(a,b){ return (a.platform||'').localeCompare(b.platform||'') || (a.group||'').localeCompare(b.group||''); });
   var html = '';
   if(links.length===0){
     html = '<div style="padding:20px;color:var(--t3);text-align:center">暂无链接，点击「＋ 添加链接」</div>';
   } else {
     html = '<table class="ot" id="linkTable"><thead><tr>'
+      +'<th style="min-width:70px">平台<div class="resize-handle"></div></th>'
       +'<th style="min-width:70px">专属组<div class="resize-handle"></div></th>'
       +'<th style="min-width:200px">完整短链<div class="resize-handle"></div></th>'
       +'<th style="min-width:120px">短链后缀<div class="resize-handle"></div></th>'
@@ -2831,7 +3032,10 @@ function renderLinkLibList(){
       var gi = getGroupInfo(l.group);
       var gColor = gi ? gi.color : '#999';
       var gLabel = gi ? gi.label : (l.group||'-');
+      var pLabel = getPlatformLabel(l.platform);
+      var pClass = getPlatformClass(l.platform);
       html += '<tr>'
+        + '<td><span class="platform-badge '+pClass+'">'+esc(pLabel)+'</span></td>'
         + '<td><span class="rt-group" style="background:'+gColor+'20;color:'+gColor+'">'+esc(gLabel)+'</span></td>'
         + '<td class="mono" style="font-size:12px">'+esc(l.full_link||'-')+'</td>'
         + '<td class="mono" style="font-size:12px">'+esc(l.suffix||'-')+'</td>'
@@ -2854,6 +3058,7 @@ $('btnAddLink').addEventListener('click', function(){ openLinkEdit(null) });
 function openLinkEdit(link){
   $('linkEditId').value = link ? link.id : '';
   $('linkEditTitle').textContent = link ? '编辑链接' : '添加链接';
+  $('linkPlatform').value = link ? (link.platform||'') : '';
   $('linkGroup').value = link ? (link.group||'') : '';
   $('linkFullLink').value = link ? (link.full_link||'') : '';
   $('linkSuffix').value = link ? (link.suffix||'') : '';
@@ -2890,15 +3095,18 @@ function deleteLink(lid){
 }
 
 $('btnSaveLink').addEventListener('click', function(){
+  var platform = $('linkPlatform').value;
   var group = $('linkGroup').value;
   var full_link = $('linkFullLink').value.trim();
   var suffix = $('linkSuffix').value.trim();
+  if(!platform){ toast('请选择平台','er'); return; }
   if(!group){ toast('请选择专属组','er'); return; }
   if(!full_link){ toast('请输入完整短链','er'); return; }
   if(!suffix){ toast('请输入短链后缀','er'); return; }
   var id = $('linkEditId').value;
   var obj = {
     id: id || genId(),
+    platform: platform,
     group: group,
     full_link: full_link,
     suffix: suffix,
@@ -2921,28 +3129,23 @@ $('btnSaveLink').addEventListener('click', function(){
 });
 
 /* ════════════════════ RETENTION CONFIG ════════════════════ */
-function openRetention(){
-  renderRetentionList();
-  $('retentionModal').classList.add('active');
-}
-function closeRetention(){ $('retentionModal').classList.remove('active') }
-function closeRetentionEdit(){ $('retentionEditModal').classList.remove('active') }
-
-$('btnRetention').addEventListener('click', openRetention);
+// Now rendered as full page via renderRetentionList()
+$('btnRetentionView').addEventListener('click', function(){ renderRetentionList(); });
 
 function renderRetentionList(){
   var games = getData();
+  $('countLabel').textContent = '共 '+games.length+' 个项目';
   var links = getLinks();
   var kw = ($('retentionSearch') ? $('retentionSearch').value : '').trim().toLowerCase();
   var html = '';
   if(games.length===0){
-    html = '<div style="padding:20px;color:var(--t3);text-align:center">暂无项目，请先在项目视图中添加游戏</div>';
+    html = '<div style="padding:20px;color:var(--t3);text-align:center">暂无项目，请先在项目配置中添加游戏</div>';
   } else {
     html = '<table class="ot" id="retentionTable"><thead><tr>'
-      +'<th style="min-width:120px">项目<div class="resize-handle"></div></th>'
-      +'<th style="min-width:130px">专属池<div class="resize-handle"></div></th>'
-      +'<th style="min-width:130px">专属推送<div class="resize-handle"></div></th>'
-      +'<th style="min-width:130px">游戏盒子<div class="resize-handle"></div></th>'
+      +'<th style="min-width:130px">项目<div class="resize-handle"></div></th>'
+      +'<th style="min-width:140px">专属池<div class="resize-handle"></div></th>'
+      +'<th style="min-width:140px">专属推送<div class="resize-handle"></div></th>'
+      +'<th style="min-width:140px">游戏盒子<div class="resize-handle"></div></th>'
       +'<th style="width:80px;min-width:80px">操作<div class="resize-handle"></div></th>'
       +'</tr></thead><tbody>';
     for(var i=0;i<games.length;i++){
@@ -2950,12 +3153,12 @@ function renderRetentionList(){
       var ret = getRetention(g);
       // Filter
       if(kw){
-        var matchText = (g.game_name||'').toLowerCase();
+        var matchText = (g.game_name||'').toLowerCase() + ' ' + (g.project_id||'').toLowerCase();
         var poolS = getRetentionSummary(ret,'pool');
         var pushS = getRetentionSummary(ret,'push');
         var boxS = getRetentionSummary(ret,'box');
         if(poolS){ matchText += ' ' + (poolS.group||'') + ' ' + (poolS.condition||''); }
-        if(pushS){ matchText += ' ' + (pushS.condition||''); }
+        if(pushS){ matchText += ' ' + (pushS.group||'') + ' ' + (pushS.condition||''); }
         if(boxS){ matchText += ' ' + (boxS.group||'') + ' ' + (boxS.condition||''); }
         if(matchText.toLowerCase().indexOf(kw)<0) continue;
       }
@@ -2982,17 +3185,11 @@ function renderRetentionCell(ret, dir){
   var gColor = gi ? gi.color : '#999';
   var gLabel = gi ? gi.label : '';
   var cond = s.condition || '';
-  if(dir==='push'){
-    // 专属推送没有组，只有条件
-    cond = s.condition || '';
-    if(!cond) return '<td class="rt-cell"><span class="rt-none">—</span></td>';
-    return '<td class="rt-cell"><div class="rt-cond" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(cond)+'">'+esc(cond)+'</div></td>';
-  }
-  // pool and box: show group + condition
+  // All three directions now have group + condition
   if(!gLabel && !cond) return '<td class="rt-cell"><span class="rt-none">—</span></td>';
   var html = '<td class="rt-cell">';
-  if(gLabel) html += '<div><span class="rt-group" style="background:'+gColor+'20;color:'+gColor+'">'+esc(gLabel)+'</span></div>';
-  if(cond) html += '<div class="rt-cond" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(cond)+'">'+esc(cond)+'</div>';
+  if(gLabel) html += '<div><span class="rt-group" style="background:'+gColor+'20;color:'+gColor+';margin-bottom:2px">'+esc(gLabel)+'</span></div>';
+  if(cond) html += '<div class="rt-cond" title="'+esc(cond)+'">'+esc(cond)+'</div>';
   html += '</td>';
   return html;
 }
@@ -3013,8 +3210,10 @@ function editRetention(gameId){
   onRtPoolGroupChange();
   // Push
   var push = ret.push || {};
+  $('rtPushGroup').value = push.group || '';
   $('rtPushConditions').value = push.conditions || '';
   $('rtPushNotes').value = push.notes || '';
+  onRtPushGroupChange();
   // Box
   var box = ret.box || {};
   $('rtBoxConditions').value = box.conditions || '';
@@ -3050,11 +3249,24 @@ function onRtPoolGroupChange(){
     $('rtPoolFullLink').textContent = '（该组暂无链接）';
     return;
   }
-  // Use first link for this group
-  var l = links[0];
+  // Show all platforms' suffixes
+  var suffixes = links.map(function(l){ return l.platform ? getPlatformLabel(l.platform)+':'+(l.suffix||'-') : (l.suffix||'-') }).join(' | ');
   $('rtPoolLinkInfo').style.display='block';
-  $('rtPoolSuffix').textContent = l.suffix || '-';
-  $('rtPoolFullLink').textContent = l.full_link || '-';
+  $('rtPoolSuffix').textContent = suffixes;
+  $('rtPoolFullLink').textContent = links.map(function(l){ return l.full_link||'-' }).join('\n');
+}
+
+function onRtPushGroupChange(){
+  var group = $('rtPushGroup').value;
+  if(!group){ $('rtPushLinkInfo').style.display='none'; return; }
+  var links = getLinksByGroup(group);
+  if(links.length===0){
+    $('rtPushLinkInfo').style.display='block';
+    $('rtPushFullLink').textContent = '（该组暂无链接）';
+    return;
+  }
+  $('rtPushLinkInfo').style.display='block';
+  $('rtPushFullLink').textContent = links.map(function(l){ return l.full_link||'-' }).join('\n');
 }
 
 function onRtBoxGroupChange(){
@@ -3106,11 +3318,19 @@ $('btnSaveRetention').addEventListener('click', function(){
   } else {
     delete ret.pool;
   }
-  // Push
+  // Push - now with group + link
+  var pushGroup = $('rtPushGroup').value;
   var pushCond = $('rtPushConditions').value.trim();
   var pushNotes = $('rtPushNotes').value.trim();
-  if(pushCond || pushNotes){
-    ret.push = { conditions: pushCond, notes: pushNotes };
+  if(pushGroup || pushCond || pushNotes){
+    var pushLinks = pushGroup ? getLinksByGroup(pushGroup) : [];
+    var pushLink = pushLinks.length>0 ? pushLinks[0] : null;
+    ret.push = {
+      group: pushGroup,
+      conditions: pushCond,
+      full_link: pushLink ? pushLink.full_link : '',
+      notes: pushNotes
+    };
   } else {
     delete ret.push;
   }
@@ -3136,6 +3356,64 @@ $('btnSaveRetention').addEventListener('click', function(){
   closeRetentionEdit();
   renderRetentionList();
 });
+
+/* ════════════════════ PROJECT CONFIG ════════════════════ */
+$('btnProjectExport').addEventListener('click', function(){
+  var games = getData();
+  var exportData = games.map(function(g){
+    return { project_id: g.project_id||'', game_name: g.game_name, id: g.id };
+  });
+  var blob = new Blob([JSON.stringify(exportData, null, 2)], {type:'application/json'});
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'project_config.json'; a.click();
+  toast('已导出','ok');
+});
+
+function renderProjectConfigList(){
+  var games = getData();
+  var kw = ($('projectSearch') ? $('projectSearch').value : '').trim().toLowerCase();
+  if(kw){
+    games = games.filter(function(g){
+      return (g.game_name||'').toLowerCase().indexOf(kw)>=0 || (g.project_id||'').toLowerCase().indexOf(kw)>=0;
+    });
+  }
+  var html = '';
+  if(games.length===0){
+    html = '<div style="padding:20px;color:var(--t3);text-align:center">暂无项目，点击「＋ 添加」创建</div>';
+  } else {
+    html = '<table class="ot" id="projectConfigTable"><thead><tr>'
+      +'<th style="min-width:160px">项目名称<div class="resize-handle"></div></th>'
+      +'<th style="min-width:140px">项目ID（铭文）<div class="resize-handle"></div></th>'
+      +'<th style="width:80px;min-width:80px">操作<div class="resize-handle"></div></th>'
+      +'</tr></thead><tbody>';
+    for(var i=0;i<games.length;i++){
+      var g = games[i];
+      html += '<tr>'
+        + '<td style="font-weight:600">'+esc(g.game_name||'-')+'</td>'
+        + '<td class="mono">'+esc(g.project_id||'-')+'</td>'
+        + '<td class="act" style="white-space:nowrap">'
+        + '<button class="btn-sm pri" onclick="event.stopPropagation();editProjectConfig(\''+g.id+'\')" style="font-size:12px;padding:4px 10px">编辑ID</button>'
+        + '</td>'
+        + '</tr>';
+    }
+    html += '</tbody></table>';
+  }
+  $('projectConfigList').innerHTML = html;
+  initColumnResize();
+}
+
+function editProjectConfig(gameId){
+  var g = getGameById(gameId);
+  if(!g) return;
+  var newId = prompt('编辑项目ID（铭文）：', g.project_id||'');
+  if(newId===null) return;
+  g.project_id = newId.trim();
+  var games = getData();
+  var idx = games.findIndex(function(x){ return x.id===gameId });
+  if(idx>=0) games[idx] = g;
+  saveData(games);
+  toast('项目ID已更新');
+  renderProjectConfigList();
+}
 
 /* ════════════════════ GITHUB SYNC ════════════════════ */
 function getGitToken(){
