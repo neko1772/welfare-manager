@@ -46,6 +46,8 @@ th .resize-handle:hover,th .resize-handle.active{background:var(--p)}
 th .sort-btn{display:inline-flex;align-items:center;justify-content:center;cursor:pointer;margin-left:4px;padding:1px 4px;border-radius:4px;font-size:13px;color:var(--t3);vertical-align:middle;user-select:none;transition:.15s}
 th .sort-btn:hover{background:#e8eaf0;color:var(--p)}
 th .sort-btn.active{color:var(--p);font-weight:800}
+.off-toggle{display:inline-block;color:var(--p);cursor:pointer;font-size:12px;font-weight:600;margin-left:2px;padding:1px 6px;border-radius:6px;background:#eef2ff;transition:.15s;user-select:none}
+.off-toggle:hover{background:var(--p);color:#fff}
 td{padding:var(--sp) 14px;border-bottom:1px solid #f0f0f0;font-size:14px;vertical-align:top}
 tr:hover{background:#fafbff}
 tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
@@ -2761,8 +2763,8 @@ function renderPlanList(){
       +'<th style="min-width:80px">项目名称<div class="resize-handle"></div></th>'
       +'<th style="min-width:80px">类型<div class="resize-handle"></div></th>'
       +'<th style="min-width:80px">版本<div class="resize-handle"></div></th>'
-      +'<th style="min-width:80px">日期<span class="sort-btn" data-col="date" onclick="event.stopPropagation();togglePlanSort(\'date\')" title="点击排序">⇅</span><div class="resize-handle"></div></th>'
-      +'<th style="min-width:60px">倒计时<div class="resize-handle"></div></th>'
+      +'<th style="min-width:100px">日期<span class="sort-btn" data-col="date" onclick="event.stopPropagation();togglePlanSort(\'date\')" title="点击排序">⇅</span><div class="resize-handle"></div></th>'
+      +'<th style="min-width:100px">倒计时<div class="resize-handle"></div></th>'
       +'<th style="min-width:100px">分配福利官<div class="resize-handle"></div></th>'
       +'<th style="min-width:100px">备注<div class="resize-handle"></div></th>'
       +'<th style="width:80px;min-width:80px">操作<div class="resize-handle"></div></th>'
@@ -2782,16 +2784,29 @@ function renderPlanList(){
         else if(diffDays > 0){ diffStr = diffDays + ' 天后'; diffColor = '#16a34a'; }
         else { diffStr = '已 ' + Math.abs(diffDays) + ' 天前'; diffColor = 'var(--t3)'; }
       }
-      var officerNames = (l.officer_ids||[]).map(function(oid){
+      var officerList = (l.officer_ids||[]).map(function(oid){
         var o = offs.find(function(x){return x.id===oid});
         return o ? o.nick : '';
-      }).filter(Boolean).join('、');
+      }).filter(Boolean);
       // If no officer_ids but game exists, use game's officers
-      if(!officerNames && game && game.officer_ids){
-        officerNames = (game.officer_ids||[]).map(function(oid){
+      if(officerList.length === 0 && game && game.officer_ids){
+        officerList = (game.officer_ids||[]).map(function(oid){
           var o = offs.find(function(x){return x.id===oid});
           return o ? o.nick : '';
-        }).filter(Boolean).join('、');
+        }).filter(Boolean);
+      }
+      // Officer display: show max 2, fold rest
+      var officerHtml;
+      if(officerList.length === 0){
+        officerHtml = '-';
+      } else if(officerList.length <= 2){
+        officerHtml = esc(officerList.join('、'));
+      } else {
+        var rowId = 'off_' + l.id;
+        var restCount = officerList.length - 2;
+        officerHtml = '<span>' + esc(officerList.slice(0,2).join('、')) + '</span>'
+          + '<span class="off-rest" id="'+rowId+'_rest" style="display:none">' + esc('、'+officerList.slice(2).join('、')) + '</span>'
+          + "<span class=\"off-toggle\" id=\""+rowId+"_toggle\" onclick=\"event.stopPropagation();toggleOfficers('"+rowId+"',"+restCount+")\" title=\"展开/收起\">等"+restCount+"个 ▾</span>";
       }
       // Type badge
       var typeBadge = l.type==='version_update'
@@ -2810,7 +2825,7 @@ function renderPlanList(){
         + '<td>'+verTag+'</td>'
         + '<td>'+esc(l.date||'-')+'</td>'
         + '<td>'+(diffStr?'<span style="color:'+diffColor+';font-weight:700">'+diffStr+'</span>':'-')+'</td>'
-        + '<td>'+esc(officerNames||'-')+'</td>'
+        + '<td>'+officerHtml+'</td>'
         + '<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis">'+esc(l.notes||'-')+'</td>'
         + '<td class="act" onclick="event.stopPropagation()"><span class="del" onclick="deleteLaunch(\''+l.id+'\')" title="删除" style="font-size:18px;cursor:pointer">×</span></td>'
         + '</tr>';
@@ -2964,6 +2979,19 @@ function deleteLaunch(lid){
   savePlans(plans);
   toast('已删除','ok');
   renderPlanList();
+}
+
+function toggleOfficers(rowId, count){
+  var rest = document.getElementById(rowId+'_rest');
+  var toggle = document.getElementById(rowId+'_toggle');
+  if(!rest || !toggle) return;
+  if(rest.style.display === 'none'){
+    rest.style.display = '';
+    toggle.textContent = '收起 ▴';
+  } else {
+    rest.style.display = 'none';
+    toggle.textContent = '等'+count+'个 ▾';
+  }
 }
 
 
