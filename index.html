@@ -146,6 +146,18 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
 .timeline-widget .tw-type.launch{background:#dbeafe;color:#1d4ed8}
 .timeline-widget .tw-type.version_update{background:#dcfce7;color:#15803d}
 .timeline-widget .tw-empty{text-align:center;color:var(--t3);font-size:13px;padding:12px 0}
+/* Reminder modal items */
+.rm-item{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;font-size:14px;background:#f8f9fc;margin-bottom:8px;transition:.15s}
+.rm-item:hover{background:#eef2ff}
+.rm-item:last-child{margin-bottom:0}
+.rm-date{font-weight:700;color:var(--p);min-width:48px;text-align:center;white-space:nowrap;font-size:15px}
+.rm-type{font-size:11px;padding:2px 8px;border-radius:6px;font-weight:700;white-space:nowrap}
+.rm-type.launch{background:#dbeafe;color:#1d4ed8}
+.rm-type.version_update{background:#dcfce7;color:#15803d}
+.rm-event{flex:1;color:var(--t2);line-height:1.4}
+.rm-btn{font-size:12px;padding:5px 14px;border:1.5px solid var(--p);color:var(--p);border-radius:8px;cursor:pointer;background:#fff;font-weight:700;white-space:nowrap}
+.rm-btn:hover{background:var(--p);color:#fff}
+.rm-empty{text-align:center;color:var(--t3);font-size:14px;padding:20px 0}
 /* Section badge */
 .section-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;user-select:none}
 .section-badge.welfare{background:#eef2ff;color:var(--p)}
@@ -205,12 +217,6 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
       <div class="sc-title">项目配置</div>
       <div class="sc-desc">项目ID、项目名称<br>管理所有项目信息</div>
     </div>
-  </div>
-  <div class="timeline-widget" id="timelineWidget">
-    <div class="tw-header">
-      <span class="tw-title">📅 近期事件</span>
-    </div>
-    <div class="tw-items" id="timelineItems"></div>
   </div>
 </div>
 
@@ -476,6 +482,19 @@ XCB_002	星辰变	B	李四'></textarea>
   <div class="mf">
     <button class="btn btn-o" onclick="closeProjectConfigImport()">取消</button>
     <button class="btn btn-p" id="btnDoProjectConfigImport">导入</button>
+  </div>
+</div>
+</div>
+
+<!-- 近期事件提醒弹窗 -->
+<div class="mo" id="reminderModal">
+<div class="md" style="max-width:520px">
+  <div class="hd"><span>📅 近期事件提醒</span><span class="x" onclick="closeReminder()">×</span></div>
+  <div class="mb">
+    <div id="reminderList"></div>
+  </div>
+  <div class="mf">
+    <button class="btn btn-o" onclick="closeReminder()">关闭</button>
   </div>
 </div>
 </div>
@@ -953,19 +972,40 @@ function formatTimelineDate(d){
 }
 
 function renderTimeline(){
+  var events = collectTimelineEvents();
+  if(events.length === 0) return; // No events, don't show popup
+  var html = '';
+  for(var i=0;i<events.length;i++){
+    var e = events[i];
+    var displayDate = formatTimelineDate(e.date);
+    var typeLabel = e.type==='version_update' ? '版更' : '上线';
+    var typeClass = e.type==='version_update' ? 'version_update' : 'launch';
+    html += '<div class="rm-item">'
+      + '<span class="rm-date">'+esc(displayDate)+'</span>'
+      + '<span class="rm-type '+typeClass+'">'+typeLabel+'</span>'
+      + '<span class="rm-event">'+esc(e.desc)+'</span>'
+      + "<button class='rm-btn' onclick=\"gotoWelfareGame('"+esc(e.game_id)+"','"+esc(e.date)+"')\">确认</button>"
+      + '</div>';
+  }
+  $('reminderList').innerHTML = html;
+  $('reminderModal').classList.add('active');
+}
+
+function closeReminder(){
+  $('reminderModal').classList.remove('active');
+}
+
+function collectTimelineEvents(){
   var plans = getPlans();
   var games = getData();
   var versions = getVersions();
-  // Build game lookup
   var gameMap = {};
   for(var i=0;i<games.length;i++){ gameMap[games[i].id] = games[i]; }
   var verMap = {};
   for(var j=0;j<versions.length;j++){ verMap[versions[j].id] = versions[j]; }
   var now = new Date();
-  var todayStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
   var cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3);
   var futureCutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 14);
-  // Collect events
   var events = [];
   for(var i=0;i<plans.length;i++){
     var p = plans[i];
@@ -984,7 +1024,6 @@ function renderTimeline(){
     }
     events.push({ date: pd, desc: desc, game_id: p.game_id, type: p.type||'launch' });
   }
-  // Deduplicate by game_id+date+type
   var seen = {};
   var uniq = [];
   for(var i=0;i<events.length;i++){
@@ -992,30 +1031,13 @@ function renderTimeline(){
     if(!seen[key]){ seen[key]=true; uniq.push(events[i]); }
   }
   uniq.sort(function(a,b){ return a.date.localeCompare(b.date) });
-  // Render
-  var html = '';
-  if(uniq.length===0){
-    html = '<div class="tw-empty">暂无近期事件</div>';
-  } else {
-    for(var i=0;i<uniq.length;i++){
-      var e = uniq[i];
-      var displayDate = formatTimelineDate(e.date);
-      var typeLabel = e.type==='version_update' ? '版更' : '上线';
-      var typeClass = e.type==='version_update' ? 'version_update' : 'launch';
-      html += "<div class='tw-item' onclick=\"gotoWelfareGame('"+esc(e.game_id)+"','"+esc(e.date)+"')\">"
-        + '<span class="tw-date">'+esc(displayDate)+'</span>'
-        + '<span class="tw-type '+typeClass+'">'+typeLabel+'</span>'
-        + '<span class="tw-event">'+esc(e.desc)+'</span>'
-        + '</div>';
-    }
-  }
-  var el = $('timelineItems');
-  if(el) el.innerHTML = html;
+  return uniq;
 }
 
 function gotoWelfareGame(gameId, date){
   var game = getGameById(gameId);
   if(!game) return;
+  closeReminder();
   // Navigate to welfare section
   currentSection = 'welfare';
   $('retentionPage').classList.remove('active');
