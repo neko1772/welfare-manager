@@ -326,7 +326,7 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
 <div id="projectConfigPage">
   <div style="padding:20px;overflow-x:auto">
     <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
-      <input type="text" id="projectSearch" placeholder="🔍 搜索项目ID、名称、负责组、负责人..." style="flex:1;min-width:200px;padding:9px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none" oninput="renderProjectConfigList()">
+      <input type="text" id="projectSearch" placeholder="🔍 搜索项目ID、名称、公众号、备注..." style="flex:1;min-width:200px;padding:9px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none" oninput="renderProjectConfigList()">
       <button class="btn btn-p" id="btnAddProjectConfig" style="font-size:13px;padding:8px 16px;white-space:nowrap">＋ 添加项目</button>
       <button class="btn btn-o" id="btnImportProjectConfig" style="font-size:13px;padding:8px 16px;white-space:nowrap">📥 批量导入</button>
     </div>
@@ -458,15 +458,6 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
     <input type="hidden" id="projectConfigEditId">
     <label>项目ID（铭文）*</label><input type="text" id="projectConfigProjectId" placeholder="例如：SHENQI_001">
     <label>项目名称 *</label><input type="text" id="projectConfigProjectName" placeholder="例如：神泣">
-    <label>负责组</label>
-    <select id="projectConfigGroup" style="width:100%;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;outline:none">
-      <option value="">— 未选择 —</option>
-      <option value="A">A组</option>
-      <option value="B">B组</option>
-      <option value="C">C组</option>
-      <option value="SH">上海组</option>
-    </select>
-    <label>负责人</label><input type="text" id="projectConfigPerson" placeholder="负责人姓名">
     <label>福利官入口更换日期</label><input type="date" id="projectConfigEntryDate" placeholder="如：2025-07-08">
     <label>公众号</label><input type="text" id="projectConfigOfficial" placeholder="公众号名称">
     <label>状态</label>
@@ -492,10 +483,10 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
   <div class="hd"><span>📥 项目批量导入</span><span class="x" onclick="closeProjectConfigImport()">×</span></div>
   <div class="mb">
     <p style="font-size:13px;color:var(--t2);margin-bottom:10px">支持 Excel 复制粘贴（制表符）或 CSV 格式。</p>
-    <p style="font-size:12px;color:var(--t3);margin-bottom:8px">字段顺序：项目ID | 项目名称 | 负责组 | 负责人 | 福利官入口更换日期 | 公众号 | 状态 | 备注<br><span style="color:var(--p)">负责组填 A/B/C/SH；状态填 active/paused/stopped/pending；日期格式 YYYY-MM-DD</span></p>
+    <p style="font-size:12px;color:var(--t3);margin-bottom:8px">字段顺序：项目ID | 项目名称 | 福利官入口更换日期 | 公众号 | 状态 | 备注<br><span style="color:var(--p)">状态填 active/paused/stopped/pending；日期格式 YYYY-MM-DD</span></p>
     <textarea id="projectConfigImportText" style="width:100%;min-height:120px;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:13px;outline:none;font-family:inherit;resize:vertical;margin-bottom:12px"
-      placeholder='SHENQI_001	神泣	A	张三	2025-07-08	神泣公众号	active	备注信息
-XCB_002	星辰变	B	李四	2025-07-10	星辰变公众号	paused	暂停中'></textarea>
+      placeholder='SHENQI_001	神泣	2025-07-08	神泣公众号	active	备注信息
+XCB_002	星辰变	2025-07-10	星辰变公众号	paused	暂停中'></textarea>
     <div style="display:flex;gap:10px">
       <button class="btn btn-o" onclick="pasteProjectConfigImport()">📋 从剪贴板粘贴</button>
     </div>
@@ -894,7 +885,7 @@ var PLAN_KEY = 'gw_plans';  // 更新计划：上线 + 版更
 var LAUNCH_REMINDER_KEY = 'gw_launch_reminded';
 var VERSION_KEY = 'gw_versions';
 var LINK_KEY = 'gw_link_lib';  // 链接库
-var PROJECT_CONFIG_KEY = 'gw_project_configs';  // 项目配置（ID/名称/负责组/负责人）
+var PROJECT_CONFIG_KEY = 'gw_project_configs';  // 项目配置（ID/名称/入口更换日期/公众号/状态/备注）
 var RETENTION_GROUPS = [
   {key:'A', label:'A组', color:'#3b82f6'},
   {key:'B', label:'B组', color:'#16a34a'},
@@ -3619,7 +3610,7 @@ function getGroupInfo(key){
 $('btnProjectExport').addEventListener('click', function(){
   var configs = getProjectConfigs();
   var exportData = configs.map(function(p){
-    return { project_id: p.project_id, project_name: p.project_name, group: p.group||'', person: p.person||'', entry_date: p.entry_date||'', official: p.official||'', status: p.status||'', remark: p.remark||'' };
+    return { project_id: p.project_id, project_name: p.project_name, entry_date: p.entry_date||'', official: p.official||'', status: p.status||'', remark: p.remark||'' };
   });
   var blob = new Blob([JSON.stringify(exportData, null, 2)], {type:'application/json'});
   var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'project_config.json'; a.click();
@@ -3634,8 +3625,6 @@ function renderProjectConfigList(){
     configs = configs.filter(function(p){
       return (p.project_id||'').toLowerCase().indexOf(kw)>=0
         || (p.project_name||'').toLowerCase().indexOf(kw)>=0
-        || (p.group||'').toLowerCase().indexOf(kw)>=0
-        || (p.person||'').toLowerCase().indexOf(kw)>=0
         || (p.official||'').toLowerCase().indexOf(kw)>=0
         || (p.remark||'').toLowerCase().indexOf(kw)>=0;
     });
@@ -3654,8 +3643,6 @@ function renderProjectConfigList(){
       +'<th style="min-width:120px">福利官入口更换日期<div class="resize-handle"></div></th>'
       +'<th style="min-width:140px">项目ID（铭文）<div class="resize-handle"></div></th>'
       +'<th style="min-width:140px">项目名称<div class="resize-handle"></div></th>'
-      +'<th style="min-width:100px">负责组<div class="resize-handle"></div></th>'
-      +'<th style="min-width:100px">负责人<div class="resize-handle"></div></th>'
       +'<th style="min-width:120px">公众号<div class="resize-handle"></div></th>'
       +'<th style="min-width:80px">状态<div class="resize-handle"></div></th>'
       +'<th style="min-width:140px">备注<div class="resize-handle"></div></th>'
@@ -3663,15 +3650,12 @@ function renderProjectConfigList(){
       +'</tr></thead><tbody>';
     for(var i=0;i<configs.length;i++){
       var p = configs[i];
-      var gi = getGroupInfo(p.group);
       var si = STATUS_MAP[p.status] || null;
       var entryDateDisplay = p.entry_date ? formatTimelineDate(p.entry_date) : '<span style="color:var(--t3)">-</span>';
       html += '<tr>'
         + '<td class="nw" style="color:var(--t2)">'+entryDateDisplay+'</td>'
         + '<td class="mono">'+esc(p.project_id||'-')+'</td>'
         + '<td style="font-weight:600">'+esc(p.project_name||'-')+'</td>'
-        + '<td>'+(p.group ? '<span style="display:inline-block;padding:2px 10px;background:'+gi.color+'15;color:'+gi.color+';border-radius:12px;font-size:12px;font-weight:600">'+esc(gi.label)+'</span>' : '<span style="color:var(--t3)">-</span>')+'</td>'
-        + '<td>'+esc(p.person||'-')+'</td>'
         + '<td>'+esc(p.official||'-')+'</td>'
         + '<td>'+(si ? '<span style="display:inline-block;padding:2px 10px;background:'+si.color+'15;color:'+si.color+';border-radius:12px;font-size:12px;font-weight:600">'+si.label+'</span>' : '<span style="color:var(--t3)">-</span>')+'</td>'
         + '<td style="color:var(--t2);font-size:13px">'+esc(p.remark||'-')+'</td>'
@@ -3695,8 +3679,6 @@ function openProjectConfigEdit(id){
   $('projectConfigEditId').value = p ? p.id : '';
   $('projectConfigProjectId').value = p ? (p.project_id||'') : '';
   $('projectConfigProjectName').value = p ? (p.project_name||'') : '';
-  $('projectConfigGroup').value = p ? (p.group||'') : '';
-  $('projectConfigPerson').value = p ? (p.person||'') : '';
   $('projectConfigEntryDate').value = p ? (p.entry_date||'') : '';
   $('projectConfigOfficial').value = p ? (p.official||'') : '';
   $('projectConfigStatus').value = p ? (p.status||'') : '';
@@ -3712,8 +3694,6 @@ $('btnSaveProjectConfig').addEventListener('click', function(){
   var id = $('projectConfigEditId').value.trim();
   var projectId = $('projectConfigProjectId').value.trim();
   var projectName = $('projectConfigProjectName').value.trim();
-  var group = $('projectConfigGroup').value;
-  var person = $('projectConfigPerson').value.trim();
   var entryDate = $('projectConfigEntryDate').value.trim();
   var official = $('projectConfigOfficial').value.trim();
   var status = $('projectConfigStatus').value;
@@ -3726,8 +3706,6 @@ $('btnSaveProjectConfig').addEventListener('click', function(){
     if(idx>=0){
       configs[idx].project_id = projectId;
       configs[idx].project_name = projectName;
-      configs[idx].group = group;
-      configs[idx].person = person;
       configs[idx].entry_date = entryDate;
       configs[idx].official = official;
       configs[idx].status = status;
@@ -3738,8 +3716,6 @@ $('btnSaveProjectConfig').addEventListener('click', function(){
       id: 'pc_'+Date.now(),
       project_id: projectId,
       project_name: projectName,
-      group: group,
-      person: person,
       entry_date: entryDate,
       official: official,
       status: status,
@@ -3794,27 +3770,21 @@ $('btnDoProjectConfigImport').addEventListener('click', function(){
   var lines = t.split(/\n/).filter(function(l){ return l.trim(); });
   var configs = getProjectConfigs();
   var added = 0;
-  var validGroups = ['A','B','C','SH'];
   var validStatus = ['active','paused','stopped','pending'];
   for(var i=0;i<lines.length;i++){
     var parts = lines[i].split(/\t|,/);
     var projectId = (parts[0]||'').trim();
     var projectName = (parts[1]||'').trim();
-    var group = (parts[2]||'').trim();
-    var person = (parts[3]||'').trim();
-    var entryDate = (parts[4]||'').trim();
-    var official = (parts[5]||'').trim();
-    var status = (parts[6]||'').trim().toLowerCase();
-    var remark = (parts[7]||'').trim();
+    var entryDate = (parts[2]||'').trim();
+    var official = (parts[3]||'').trim();
+    var status = (parts[4]||'').trim().toLowerCase();
+    var remark = (parts[5]||'').trim();
     if(!projectId || !projectName) continue;
-    if(group && validGroups.indexOf(group)===-1) group = '';
     if(status && validStatus.indexOf(status)===-1) status = '';
     configs.push({
       id: 'pc_'+Date.now()+'_'+i,
       project_id: projectId,
       project_name: projectName,
-      group: group,
-      person: person,
       entry_date: entryDate,
       official: official,
       status: status,
