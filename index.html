@@ -257,6 +257,8 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
     <!-- Retention-only -->
     <span id="retentionBtns" style="display:none">
       <button class="btn-sm pri" id="btnRetentionView" style="border-color:#059669;color:#059669">📊 维系总览</button>
+      <button class="btn-sm pri" id="btnRetentionAdd" style="border-color:#059669;color:#059669">＋ 添加项目</button>
+      <button class="btn-sm pri" id="btnRetentionImport" style="border-color:#059669;color:#059669">📥 批量导入</button>
       <button class="btn-sm" id="btnLinkLib" style="border-color:#dc2626;color:#dc2626">🔗 链接库</button>
     </span>
     <!-- Project Config-only -->
@@ -842,6 +844,26 @@ XCB_002	星辰变	2025-07-10	星辰变公众号	paused	暂停中'></textarea>
   <div class="mf">
     <button class="btn btn-o" onclick="closeRetentionEdit()">取消</button>
     <button class="btn btn-p" id="btnSaveRetention">保存</button>
+  </div>
+</div>
+</div>
+
+<!-- 维系配置批量导入弹窗 -->
+<div class="mo" id="retentionImportModal">
+<div class="md" style="max-width:680px">
+  <div class="hd"><span>📥 批量导入维系配置</span><span class="x" onclick="closeRetentionImport()">×</span></div>
+  <div class="mb">
+    <p style="font-size:13px;color:var(--t2);margin-bottom:10px">支持 Excel 复制粘贴（制表符）或 CSV 格式。按项目名称匹配已有游戏，不存在则新建。</p>
+    <p style="font-size:12px;color:var(--t3);margin-bottom:8px">字段顺序：项目名 | 专属池组 | 累充 | 充值周期 | 周期金额 | 推送组 | 推送条件 | 盒子组 | 盒子条件<br><span style="color:var(--p)">组填 A/B/C/SH；不需要的列留空但保留制表符分隔</span></p>
+    <textarea id="retentionImportText" style="width:100%;min-height:140px;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:13px;outline:none;font-family:inherit;resize:vertical;margin-bottom:12px"
+      placeholder="王者荣耀	A	≥5000	30天	≥1000	A	累充≥3000且近7天活跃	B	累计登录≥7天且充值≥500&#10;和平精英	B	≥3000	30天	≥800			C	累计登录≥5天"></textarea>
+    <div style="font-size:12px;color:var(--t3);margin-bottom:8px">
+      <b>说明：</b>每行一个项目，列之间用 Tab 或逗号分隔。项目名必须填写，其余列可留空。留空的配置项不会被覆盖。
+    </div>
+  </div>
+  <div class="mf">
+    <button class="btn btn-o" onclick="closeRetentionImport()">取消</button>
+    <button class="btn btn-p" id="btnDoRetentionImport">导入</button>
   </div>
 </div>
 </div>
@@ -3374,6 +3396,11 @@ $('btnSaveLink').addEventListener('click', function(){
 /* ════════════════════ RETENTION CONFIG ════════════════════ */
 // Now rendered as full page via renderRetentionList()
 $('btnRetentionView').addEventListener('click', function(){ renderRetentionList(); });
+$('btnRetentionAdd').addEventListener('click', function(){ openEditModal(null); });
+$('btnRetentionImport').addEventListener('click', function(){
+  $('retentionImportModal').classList.add('active');
+  $('retentionImportText').value = '';
+});
 
 function renderRetentionList(){
   var games = getData();
@@ -3597,6 +3624,86 @@ $('btnSaveRetention').addEventListener('click', function(){
   saveData(games);
   toast('维系配置已保存','ok');
   closeRetentionEdit();
+  renderRetentionList();
+});
+
+/* Retention batch import */
+function closeRetentionImport(){ $('retentionImportModal').classList.remove('active') }
+
+$('btnDoRetentionImport').addEventListener('click', function(){
+  var t = $('retentionImportText').value.trim();
+  if(!t){ toast('请粘贴数据','er'); return; }
+  var lines = t.split(/\r?\n|\r/).filter(function(l){ return l.trim(); });
+  var games = getData();
+  var added = 0, updated = 0, created = 0;
+  var validGroups = ['A','B','C','SH'];
+  for(var i=0;i<lines.length;i++){
+    var parts = lines[i].split(/\t|,/);
+    var gameName = (parts[0]||'').trim();
+    if(!gameName) continue;
+    // Find or create game
+    var gIdx = games.findIndex(function(g){ return (g.game_name||'').toLowerCase() === gameName.toLowerCase() });
+    var isNew = false;
+    if(gIdx < 0){
+      gIdx = games.length;
+      games.push({ id: genId(), game_name: gameName, officer_ids: [], officer_seqs: {}, retention: {} });
+      isNew = true;
+    }
+    if(!games[gIdx].retention) games[gIdx].retention = {};
+    var ret = games[gIdx].retention;
+    // Pool
+    var poolGroup = (parts[1]||'').trim();
+    var poolRecharge = (parts[2]||'').trim();
+    var poolCycle = (parts[3]||'').trim();
+    var poolCycleAmount = (parts[4]||'').trim();
+    if(poolGroup && validGroups.indexOf(poolGroup)===-1) poolGroup = '';
+    if(poolGroup || poolRecharge || poolCycle || poolCycleAmount){
+      var poolLinks = poolGroup ? getLinksByGroup(poolGroup) : [];
+      var poolLink = poolLinks.length>0 ? poolLinks[0] : null;
+      ret.pool = {
+        cumulative_recharge: poolRecharge,
+        recharge_cycle: poolCycle,
+        cycle_recharge_amount: poolCycleAmount,
+        group: poolGroup,
+        link_suffix: poolLink ? poolLink.suffix : '',
+        full_link: poolLink ? poolLink.full_link : ''
+      };
+    }
+    // Push
+    var pushGroup = (parts[5]||'').trim();
+    var pushCond = (parts[6]||'').trim();
+    if(pushGroup && validGroups.indexOf(pushGroup)===-1) pushGroup = '';
+    if(pushGroup || pushCond){
+      var pushLinks = pushGroup ? getLinksByGroup(pushGroup) : [];
+      var pushLink = pushLinks.length>0 ? pushLinks[0] : null;
+      ret.push = {
+        group: pushGroup,
+        conditions: pushCond,
+        full_link: pushLink ? pushLink.full_link : '',
+        notes: ''
+      };
+    }
+    // Box
+    var boxGroup = (parts[7]||'').trim();
+    var boxCond = (parts[8]||'').trim();
+    if(boxGroup && validGroups.indexOf(boxGroup)===-1) boxGroup = '';
+    if(boxGroup || boxCond){
+      var boxLinks = boxGroup ? getLinksByGroup(boxGroup) : [];
+      var boxLink = boxLinks.length>0 ? boxLinks[0] : null;
+      ret.box = {
+        conditions: boxCond,
+        group: boxGroup,
+        full_link: boxLink ? boxLink.full_link : '',
+        notes: ''
+      };
+    }
+    if(isNew) created++; else updated++;
+    added++;
+  }
+  if(added===0){ toast('未识别到有效数据，请检查格式','er'); return; }
+  saveData(games);
+  closeRetentionImport();
+  toast('成功导入 '+added+' 个项目（新建'+created+'，更新'+updated+'）','ok');
   renderRetentionList();
 });
 
