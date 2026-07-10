@@ -3662,6 +3662,7 @@ $('btnSaveRetention').addEventListener('click', function(){
 });
 
 /* Retention batch import */
+function closeRetentionEdit(){ $('retentionEditModal').classList.remove('active') }
 function closeRetentionImport(){ $('retentionImportModal').classList.remove('active') }
 
 $('btnDoRetentionImport').addEventListener('click', function(){
