@@ -868,6 +868,19 @@ XCB_002	星辰变	2025-07-10	星辰变公众号	paused	暂停中'></textarea>
 </div>
 
 <script>
+/* Global error handler to show runtime errors on page */
+window.onerror = function(msg, url, line, col, err){
+  var box = document.getElementById('globalErrorBox');
+  if(!box){
+    box = document.createElement('div');
+    box.id = 'globalErrorBox';
+    box.style.cssText = 'position:fixed;bottom:10px;left:10px;right:10px;max-height:200px;overflow:auto;background:#fee2e2;color:#991b1b;padding:12px 16px;border-radius:8px;font-size:13px;z-index:9999;white-space:pre-wrap;font-family:monospace;';
+    document.body.appendChild(box);
+  }
+  box.textContent += 'JS ERROR @ line ' + line + ':' + (col||0) + '\n' + msg + '\n\n';
+  box.style.display = 'block';
+};
+
 /* ════════════════════ UTILS ════════════════════ */
 var $ = function(id){ return document.getElementById(id) };
 var genId = function(){ return 'id_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2,5) };
@@ -1440,7 +1453,7 @@ function getGroupInfo(key){
   for(var i=0;i<RETENTION_GROUPS.length;i++){
     if(RETENTION_GROUPS[i].key===key) return RETENTION_GROUPS[i];
   }
-  return null;
+  return key ? {key:key, label:key, color:'#888'} : null;
 }
 /* Retention config helpers (stored within each game object) */
 function getRetention(game){
@@ -3416,49 +3429,56 @@ $('btnRetentionImport').addEventListener('click', function(){
 });
 
 function renderRetentionList(){
-  var games = getData();
-  $('countLabel').textContent = '共 '+games.length+' 个项目';
-  var links = getLinks();
-  var kw = ($('retentionSearch') ? $('retentionSearch').value : '').trim().toLowerCase();
-  var html = '';
-  if(games.length===0){
-    html = '<div style="padding:20px;color:var(--t3);text-align:center">暂无项目，请先在项目配置中添加游戏</div>';
-  } else {
-    html = '<table class="ot" id="retentionTable"><thead><tr>'
-      +'<th style="min-width:130px">项目<div class="resize-handle"></div></th>'
-      +'<th style="min-width:140px">专属池<div class="resize-handle"></div></th>'
-      +'<th style="min-width:140px">专属推送<div class="resize-handle"></div></th>'
-      +'<th style="min-width:140px">游戏盒子<div class="resize-handle"></div></th>'
-      +'<th style="width:80px;min-width:80px">操作<div class="resize-handle"></div></th>'
-      +'</tr></thead><tbody>';
-    for(var i=0;i<games.length;i++){
-      var g = games[i];
-      var ret = getRetention(g);
-      // Filter
-      if(kw){
-        var matchText = (g.game_name||'').toLowerCase() + ' ' + (g.project_id||'').toLowerCase();
-        var poolS = getRetentionSummary(ret,'pool');
-        var pushS = getRetentionSummary(ret,'push');
-        var boxS = getRetentionSummary(ret,'box');
-        if(poolS){ matchText += ' ' + (poolS.group||'') + ' ' + (poolS.condition||''); }
-        if(pushS){ matchText += ' ' + (pushS.group||'') + ' ' + (pushS.condition||''); }
-        if(boxS){ matchText += ' ' + (boxS.group||'') + ' ' + (boxS.condition||''); }
-        if(matchText.toLowerCase().indexOf(kw)<0) continue;
+  try {
+    var games = getData();
+    if(!Array.isArray(games)) games = [];
+    $('countLabel').textContent = '共 '+games.length+' 个项目';
+    var links = getLinks();
+    var kw = ($('retentionSearch') ? $('retentionSearch').value : '').trim().toLowerCase();
+    var html = '';
+    if(games.length===0){
+      html = '<div style="padding:20px;color:var(--t3);text-align:center">暂无项目，请先在项目配置中添加游戏</div>';
+    } else {
+      html = '<table class="ot" id="retentionTable"><thead><tr>'
+        +'<th style="min-width:130px">项目<div class="resize-handle"></div></th>'
+        +'<th style="min-width:140px">专属池<div class="resize-handle"></div></th>'
+        +'<th style="min-width:140px">专属推送<div class="resize-handle"></div></th>'
+        +'<th style="min-width:140px">游戏盒子<div class="resize-handle"></div></th>'
+        +'<th style="width:80px;min-width:80px">操作<div class="resize-handle"></div></th>'
+        +'</tr></thead><tbody>';
+      for(var i=0;i<games.length;i++){
+        var g = games[i];
+        var ret = getRetention(g);
+        // Filter
+        if(kw){
+          var matchText = (g.game_name||'').toLowerCase() + ' ' + (g.project_id||'').toLowerCase();
+          var poolS = getRetentionSummary(ret,'pool');
+          var pushS = getRetentionSummary(ret,'push');
+          var boxS = getRetentionSummary(ret,'box');
+          if(poolS){ matchText += ' ' + (poolS.group||'') + ' ' + (poolS.condition||''); }
+          if(pushS){ matchText += ' ' + (pushS.group||'') + ' ' + (pushS.condition||''); }
+          if(boxS){ matchText += ' ' + (boxS.group||'') + ' ' + (boxS.condition||''); }
+          if(matchText.toLowerCase().indexOf(kw)<0) continue;
+        }
+        html += '<tr>'
+          + '<td style="font-weight:600">'+esc(g.game_name||'-')+'</td>'
+          + renderRetentionCell(ret, 'pool')
+          + renderRetentionCell(ret, 'push')
+          + renderRetentionCell(ret, 'box')
+          + '<td class="act" style="white-space:nowrap">'
+          + '<button class="btn-sm pri" onclick="event.stopPropagation();editRetention(\''+esc(g.id)+'\')" style="font-size:12px;padding:4px 10px">编辑</button>'
+          + '</td>'
+          + '</tr>';
       }
-      html += '<tr>'
-        + '<td style="font-weight:600">'+esc(g.game_name||'-')+'</td>'
-        + renderRetentionCell(ret, 'pool')
-        + renderRetentionCell(ret, 'push')
-        + renderRetentionCell(ret, 'box')
-        + '<td class="act" style="white-space:nowrap">'
-        + '<button class="btn-sm pri" onclick="event.stopPropagation();editRetention(\''+g.id+'\')" style="font-size:12px;padding:4px 10px">编辑</button>'
-        + '</td>'
-        + '</tr>';
+      html += '</tbody></table>';
     }
-    html += '</tbody></table>';
+    $('retentionList').innerHTML = html;
+    initColumnResize();
+  } catch(e) {
+    $('countLabel').textContent = '渲染出错';
+    $('retentionList').innerHTML = '<div style="padding:20px;color:#e53935;text-align:center">维系列表渲染出错，请刷新重试<br><small style="color:#999">'+esc(e.message||'unknown')+'</small></div>';
+    console.error('renderRetentionList error', e);
   }
-  $('retentionList').innerHTML = html;
-  initColumnResize();
 }
 
 function renderRetentionCell(ret, dir){
@@ -3722,11 +3742,6 @@ $('btnDoRetentionImport').addEventListener('click', function(){
 
 /* ════════════════════ PROJECT CONFIG ════════════════════ */
 /* Get group label/color */
-function getGroupInfo(key){
-  var g = RETENTION_GROUPS.find(function(r){ return r.key===key });
-  return g || {key:key, label:key||'-', color:'#888'};
-}
-
 /* Export */
 $('btnProjectExport').addEventListener('click', function(){
   var configs = getProjectConfigs();
@@ -3750,86 +3765,96 @@ function filterProjectConfigByStatus(cat){
   renderProjectConfigList();
 }
 function renderProjectConfigStats(configs){
-  var counts = { configured:0, unconfigured:0, other:0 };
-  for(var i=0;i<configs.length;i++){
-    var cat = getProjectConfigStatusCategory(configs[i].status);
-    counts[cat]++;
+  try {
+    var counts = { configured:0, unconfigured:0, other:0 };
+    for(var i=0;i<configs.length;i++){
+      var cat = getProjectConfigStatusCategory(configs[i].status);
+      counts[cat]++;
+    }
+    var cards = [
+      { key:'all', label:'全部', count:configs.length, color:'#6366f1', bg:'#6366f115' },
+      { key:'configured', label:'已配置', count:counts.configured, color:'#16a34a', bg:'#16a34a15' },
+      { key:'unconfigured', label:'未配置', count:counts.unconfigured, color:'#f59e0b', bg:'#f59e0b15' },
+      { key:'other', label:'其他', count:counts.other, color:'#6b7280', bg:'#6b728015' }
+    ];
+    var html = '';
+    for(var i=0;i<cards.length;i++){
+      var c = cards[i];
+      var active = projectConfigStatusFilter === c.key;
+      var borderStyle = active ? ('border:2px solid '+c.color+';box-shadow:0 0 0 1px '+c.color+'20') : 'border:1.5px solid #e0e0e0';
+      html += '<div class="stat-card '+(active?'active':'')+'" data-filter="'+c.key+'" onclick="filterProjectConfigByStatus(\''+c.key+'\')" style="cursor:pointer;flex:1;min-width:120px;padding:14px 16px;border-radius:12px;background:'+c.bg+';'+borderStyle+';transition:all .2s">'
+        + '<div style="font-size:13px;color:'+c.color+';font-weight:600;margin-bottom:4px">'+c.label+'</div>'
+        + '<div style="font-size:24px;font-weight:700;color:'+c.color+'">'+(c.count===undefined?0:c.count)+'</div>'
+        + '</div>';
+    }
+    $('projectConfigStats').innerHTML = html;
+  } catch(e) {
+    console.error('renderProjectConfigStats error', e);
   }
-  var cards = [
-    { key:'all', label:'全部', count:configs.length, color:'#6366f1', bg:'#6366f115' },
-    { key:'configured', label:'已配置', count:counts.configured, color:'#16a34a', bg:'#16a34a15' },
-    { key:'unconfigured', label:'未配置', count:counts.unconfigured, color:'#f59e0b', bg:'#f59e0b15' },
-    { key:'other', label:'其他', count:counts.other, color:'#6b7280', bg:'#6b728015' }
-  ];
-  var html = '';
-  for(var i=0;i<cards.length;i++){
-    var c = cards[i];
-    var active = projectConfigStatusFilter === c.key;
-    var borderStyle = active ? ('border:2px solid '+c.color+';box-shadow:0 0 0 1px '+c.color+'20') : 'border:1.5px solid #e0e0e0';
-    html += '<div onclick="filterProjectConfigByStatus(\''+c.key+'\')" style="cursor:pointer;flex:1;min-width:120px;padding:14px 16px;border-radius:12px;background:'+c.bg+';'+borderStyle+';transition:all .2s">'
-      + '<div style="font-size:13px;color:'+c.color+';font-weight:600;margin-bottom:4px">'+c.label+'</div>'
-      + '<div style="font-size:24px;font-weight:700;color:'+c.color+'">'+c.count+'</div>'
-      + '</div>';
-  }
-  $('projectConfigStats').innerHTML = html;
 }
 function renderProjectConfigList(){
-  var configs = getProjectConfigs();
-  renderProjectConfigStats(configs);
-  if(projectConfigStatusFilter !== 'all'){
-    configs = configs.filter(function(p){
-      return getProjectConfigStatusCategory(p.status) === projectConfigStatusFilter;
-    });
-  }
-  var kw = ($('projectSearch') ? $('projectSearch').value : '').trim().toLowerCase();
-  if(kw){
-    configs = configs.filter(function(p){
-      return (p.project_id||'').toLowerCase().indexOf(kw)>=0
-        || (p.project_name||'').toLowerCase().indexOf(kw)>=0
-        || (p.official||'').toLowerCase().indexOf(kw)>=0
-        || (p.remark||'').toLowerCase().indexOf(kw)>=0;
-    });
-  }
-  var STATUS_MAP = {
-    'active': {label:'正常', color:'#16a34a'},
-    'paused': {label:'暂停', color:'#f59e0b'},
-    'stopped': {label:'停止', color:'#e53935'},
-    'pending': {label:'待定', color:'#6b7280'}
-  };
-  var html = '';
-  if(configs.length===0){
-    html = '<div style="padding:20px;color:var(--t3);text-align:center">暂无项目，点击「＋ 添加项目」创建</div>';
-  } else {
-    html = '<table class="ot" id="projectConfigTable"><thead><tr>'
-      +'<th style="min-width:120px">福利官入口更换日期<div class="resize-handle"></div></th>'
-      +'<th style="min-width:140px">项目ID（铭文）<div class="resize-handle"></div></th>'
-      +'<th style="min-width:140px">项目名称<div class="resize-handle"></div></th>'
-      +'<th style="min-width:120px">公众号<div class="resize-handle"></div></th>'
-      +'<th style="min-width:80px">状态<div class="resize-handle"></div></th>'
-      +'<th style="min-width:140px">备注<div class="resize-handle"></div></th>'
-      +'<th style="width:80px;min-width:80px">操作<div class="resize-handle"></div></th>'
-      +'</tr></thead><tbody>';
-    for(var i=0;i<configs.length;i++){
-      var p = configs[i];
-      var si = STATUS_MAP[p.status] || null;
-      var entryDateDisplay = p.entry_date ? formatTimelineDate(p.entry_date) : '<span style="color:var(--t3)">-</span>';
-      html += '<tr>'
-        + '<td class="nw" style="color:var(--t2)">'+entryDateDisplay+'</td>'
-        + '<td class="mono">'+esc(p.project_id||'-')+'</td>'
-        + '<td style="font-weight:600">'+esc(p.project_name||'-')+'</td>'
-        + '<td>'+esc(p.official||'-')+'</td>'
-        + '<td>'+(si ? '<span style="display:inline-block;padding:2px 10px;background:'+si.color+'15;color:'+si.color+';border-radius:12px;font-size:12px;font-weight:600">'+si.label+'</span>' : '<span style="color:var(--t3)">-</span>')+'</td>'
-        + '<td style="color:var(--t2);font-size:13px">'+esc(p.remark||'-')+'</td>'
-        + '<td class="act" style="white-space:nowrap">'
-        + '<button class="btn-sm pri" onclick="event.stopPropagation();openProjectConfigEdit(\''+p.id+'\')" style="font-size:12px;padding:4px 10px">编辑</button>'
-        + '<button class="btn-sm" onclick="event.stopPropagation();deleteProjectConfig(\''+p.id+'\')" style="font-size:12px;padding:4px 10px;border-color:var(--d);color:var(--d)">删除</button>'
-        + '</td>'
-        + '</tr>';
+  try {
+    var configs = getProjectConfigs();
+    if(!Array.isArray(configs)) configs = [];
+    renderProjectConfigStats(configs);
+    if(projectConfigStatusFilter !== 'all'){
+      configs = configs.filter(function(p){
+        return getProjectConfigStatusCategory(p.status) === projectConfigStatusFilter;
+      });
     }
-    html += '</tbody></table>';
+    var kw = ($('projectSearch') ? $('projectSearch').value : '').trim().toLowerCase();
+    if(kw){
+      configs = configs.filter(function(p){
+        return (p.project_id||'').toLowerCase().indexOf(kw)>=0
+          || (p.project_name||'').toLowerCase().indexOf(kw)>=0
+          || (p.official||'').toLowerCase().indexOf(kw)>=0
+          || (p.remark||'').toLowerCase().indexOf(kw)>=0;
+      });
+    }
+    var STATUS_MAP = {
+      'active': {label:'正常', color:'#16a34a'},
+      'paused': {label:'暂停', color:'#f59e0b'},
+      'stopped': {label:'停止', color:'#e53935'},
+      'pending': {label:'待定', color:'#6b7280'}
+    };
+    var html = '';
+    if(configs.length===0){
+      html = '<div style="padding:20px;color:var(--t3);text-align:center">暂无项目，点击「＋ 添加项目」创建</div>';
+    } else {
+      html = '<table class="ot" id="projectConfigTable"><thead><tr>'
+        +'<th style="min-width:120px">福利官入口更换日期<div class="resize-handle"></div></th>'
+        +'<th style="min-width:140px">项目ID（铭文）<div class="resize-handle"></div></th>'
+        +'<th style="min-width:140px">项目名称<div class="resize-handle"></div></th>'
+        +'<th style="min-width:120px">公众号<div class="resize-handle"></div></th>'
+        +'<th style="min-width:80px">状态<div class="resize-handle"></div></th>'
+        +'<th style="min-width:140px">备注<div class="resize-handle"></div></th>'
+        +'<th style="width:80px;min-width:80px">操作<div class="resize-handle"></div></th>'
+        +'</tr></thead><tbody>';
+      for(var i=0;i<configs.length;i++){
+        var p = configs[i];
+        var si = STATUS_MAP[p.status] || null;
+        var entryDateDisplay = p.entry_date ? formatTimelineDate(p.entry_date) : '<span style="color:var(--t3)">-</span>';
+        html += '<tr>'
+          + '<td class="nw" style="color:var(--t2)">'+entryDateDisplay+'</td>'
+          + '<td class="mono">'+esc(p.project_id||'-')+'</td>'
+          + '<td style="font-weight:600">'+esc(p.project_name||'-')+'</td>'
+          + '<td>'+esc(p.official||'-')+'</td>'
+          + '<td>'+(si ? '<span style="display:inline-block;padding:2px 10px;background:'+si.color+'15;color:'+si.color+';border-radius:12px;font-size:12px;font-weight:600">'+si.label+'</span>' : '<span style="color:var(--t3)">-</span>')+'</td>'
+          + '<td style="color:var(--t2);font-size:13px">'+esc(p.remark||'-')+'</td>'
+          + '<td class="act" style="white-space:nowrap">'
+          + '<button class="btn-sm pri" onclick="event.stopPropagation();openProjectConfigEdit(\''+p.id+'\')" style="font-size:12px;padding:4px 10px">编辑</button>'
+          + '<button class="btn-sm" onclick="event.stopPropagation();deleteProjectConfig(\''+p.id+'\')" style="font-size:12px;padding:4px 10px;border-color:var(--d);color:var(--d)">删除</button>'
+          + '</td>'
+          + '</tr>';
+      }
+      html += '</tbody></table>';
+    }
+    $('projectConfigList').innerHTML = html;
+    initColumnResize();
+  } catch(e) {
+    $('projectConfigList').innerHTML = '<div style="padding:20px;color:#e53935;text-align:center">渲染出错，请刷新重试<br><small style="color:#999">'+esc(e.message||'unknown')+'</small></div>';
+    console.error('renderProjectConfigList error', e);
   }
-  $('projectConfigList').innerHTML = html;
-  initColumnResize();
 }
 
 /* Open add/edit modal */
