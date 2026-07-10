@@ -232,7 +232,7 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
 <div id="mainPage">
   <div class="tb" id="mainToolbar">
     <!-- Section badge + back -->
-    <span class="section-badge welfare" id="sectionBadgeWelfare" onclick="goBackToSection()">🎮 福利官管理 ↺</span>
+    <span class="section-badge welfare" id="sectionBadgeWelfare" onclick="handleSectionBadgeClick()">🎮 福利官管理 ↺</span>
     <span class="section-badge retention" id="sectionBadgeRetention" onclick="goBackToSection()" style="display:none">🛡 维系配置 ↺</span>
     <span class="section-badge project" id="sectionBadgeProject" onclick="goBackToSection()" style="display:none">📋 项目配置 ↺</span>
     <!-- Common -->
@@ -257,7 +257,6 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
     <!-- Retention-only -->
     <span id="retentionBtns" style="display:none">
       <button class="btn-sm pri" id="btnRetentionView" style="border-color:#059669;color:#059669">📊 维系总览</button>
-      <button class="btn-sm pri" id="btnRetentionAdd" style="border-color:#059669;color:#059669">＋ 添加项目</button>
       <button class="btn-sm pri" id="btnRetentionImport" style="border-color:#059669;color:#059669">📥 批量导入</button>
       <button class="btn-sm" id="btnLinkLib" style="border-color:#dc2626;color:#dc2626">🔗 链接库</button>
     </span>
@@ -1110,6 +1109,21 @@ function goBackToSection(){
   $('projectConfigPage').classList.remove('active');
   $('sectionScreen').classList.add('active');
   renderTimeline();
+}
+
+/* Single click = go back, double click = enable delete mode (hidden feature) */
+var _sectionBadgeClickTimer = null;
+function handleSectionBadgeClick(){
+  if(_sectionBadgeClickTimer){
+    clearTimeout(_sectionBadgeClickTimer);
+    _sectionBadgeClickTimer = null;
+    enableDeleteMode();
+  } else {
+    _sectionBadgeClickTimer = setTimeout(function(){
+      _sectionBadgeClickTimer = null;
+      goBackToSection();
+    }, 280);
+  }
 }
 
 function formatAmount(val){
@@ -3396,7 +3410,6 @@ $('btnSaveLink').addEventListener('click', function(){
 /* ════════════════════ RETENTION CONFIG ════════════════════ */
 // Now rendered as full page via renderRetentionList()
 $('btnRetentionView').addEventListener('click', function(){ renderRetentionList(); });
-$('btnRetentionAdd').addEventListener('click', function(){ openEditModal(null); });
 $('btnRetentionImport').addEventListener('click', function(){
   $('retentionImportModal').classList.add('active');
   $('retentionImportText').value = '';
@@ -3919,6 +3932,13 @@ $('btnDoProjectConfigImport').addEventListener('click', function(){
   var configs = getProjectConfigs();
   var added = 0;
   var validStatus = ['active','paused','stopped','pending'];
+  /* Chinese status → English mapping */
+  var statusMap = {
+    '正常':'active', '启用':'active', '运行':'active', '运行中':'active',
+    '暂停':'paused', '暂停中':'paused',
+    '停止':'stopped', '已停止':'stopped', '停用':'stopped',
+    '待定':'pending', '未定':'pending', '待定中':'pending'
+  };
   for(var i=0;i<lines.length;i++){
     var parts = lines[i].split(/\t|,/);
     var projectId = (parts[0]||'').trim();
@@ -3928,7 +3948,11 @@ $('btnDoProjectConfigImport').addEventListener('click', function(){
     var status = (parts[4]||'').trim().toLowerCase();
     var remark = (parts[5]||'').trim();
     if(!projectId || !projectName) continue;
-    if(status && validStatus.indexOf(status)===-1) status = '';
+    /* Map Chinese status to English */
+    if(status && validStatus.indexOf(status)===-1){
+      var mapped = statusMap[parts[4].trim()] || statusMap[parts[4].trim().toLowerCase()];
+      status = mapped || '';
+    }
     configs.push({
       id: 'pc_'+Date.now()+'_'+i,
       project_id: projectId,
@@ -3944,7 +3968,14 @@ $('btnDoProjectConfigImport').addEventListener('click', function(){
   saveProjectConfigs(configs);
   var verify = getProjectConfigs();
   closeProjectConfigImport();
+  /* Reset filters and search to ensure new data is visible */
   projectConfigStatusFilter = 'all';
+  if($('projectSearch')) $('projectSearch').value = '';
+  /* Update stats card active states */
+  var stats = document.querySelectorAll('#projectConfigStats .stat-card');
+  for(var s=0;s<stats.length;s++){
+    stats[s].classList.toggle('active', stats[s].getAttribute('data-filter')==='all');
+  }
   toast('成功导入 '+added+' 个项目（共'+verify.length+'条）','ok');
   renderProjectConfigList();
 });
