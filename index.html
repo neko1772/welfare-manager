@@ -1001,12 +1001,12 @@ function enterSection(section){
     showPage('main');
     render();
   } else if(section==='retention'){
-    $('retentionPage').classList.add('active');
     showPage('main');
+    $('retentionPage').classList.add('active');
     renderRetentionList();
   } else if(section==='project_config'){
-    $('projectConfigPage').classList.add('active');
     showPage('main');
+    $('projectConfigPage').classList.add('active');
     renderProjectConfigList();
   }
 }
