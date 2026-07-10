@@ -3218,7 +3218,8 @@ function openVersionEdit(ver){
   for(var i=0;i<VERSION_COLORS.length;i++){
     var c = VERSION_COLORS[i];
     var sel = c===versionCurColor ? 'box-shadow:0 0 0 3px '+c+'40;border-color:'+c : 'border-color:#ddd';
-    cpHtml += '<div data-color="'+c+'" style="width:30px;height:30px;border-radius:50%;background:'+c+';cursor:pointer;border:2px solid '+sel.split(';')[1].split(':')[1].trim()+';'+sel+'" onclick="pickVersionColor(\''+c+'\')"></div>';
+    var borderColor = c===versionCurColor ? c : '#ddd';
+    cpHtml += '<div data-color="'+c+'" style="width:30px;height:30px;border-radius:50%;background:'+c+';cursor:pointer;border:2px solid '+borderColor+';'+sel+'" onclick="pickVersionColor(\''+c+'\')"></div>';
   }
   $('versionColorPicker').innerHTML = cpHtml;
   $('versionEditModal').classList.add('active');
