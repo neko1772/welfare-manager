@@ -325,6 +325,7 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
 <!-- 项目配置页面 -->
 <div id="projectConfigPage">
   <div style="padding:20px;overflow-x:auto">
+    <div id="projectConfigStats" style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap"></div>
     <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
       <input type="text" id="projectSearch" placeholder="🔍 搜索项目ID、名称、公众号、备注..." style="flex:1;min-width:200px;padding:9px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none" oninput="renderProjectConfigList()">
       <button class="btn btn-p" id="btnAddProjectConfig" style="font-size:13px;padding:8px 16px;white-space:nowrap">＋ 添加项目</button>
@@ -3618,8 +3619,48 @@ $('btnProjectExport').addEventListener('click', function(){
 });
 
 /* Render */
+var projectConfigStatusFilter = 'all';
+function getProjectConfigStatusCategory(status){
+  if(status === 'active') return 'configured';
+  if(!status) return 'unconfigured';
+  return 'other';
+}
+function filterProjectConfigByStatus(cat){
+  projectConfigStatusFilter = (projectConfigStatusFilter === cat) ? 'all' : cat;
+  renderProjectConfigList();
+}
+function renderProjectConfigStats(configs){
+  var counts = { configured:0, unconfigured:0, other:0 };
+  for(var i=0;i<configs.length;i++){
+    var cat = getProjectConfigStatusCategory(configs[i].status);
+    counts[cat]++;
+  }
+  var cards = [
+    { key:'all', label:'全部', count:configs.length, color:'#6366f1', bg:'#6366f115' },
+    { key:'configured', label:'已配置', count:counts.configured, color:'#16a34a', bg:'#16a34a15' },
+    { key:'unconfigured', label:'未配置', count:counts.unconfigured, color:'#f59e0b', bg:'#f59e0b15' },
+    { key:'other', label:'其他', count:counts.other, color:'#6b7280', bg:'#6b728015' }
+  ];
+  var html = '';
+  for(var i=0;i<cards.length;i++){
+    var c = cards[i];
+    var active = projectConfigStatusFilter === c.key;
+    var borderStyle = active ? ('border:2px solid '+c.color+';box-shadow:0 0 0 1px '+c.color+'20') : 'border:1.5px solid #e0e0e0';
+    html += '<div onclick="filterProjectConfigByStatus(\''+c.key+'\')" style="cursor:pointer;flex:1;min-width:120px;padding:14px 16px;border-radius:12px;background:'+c.bg+';'+borderStyle+';transition:all .2s">'
+      + '<div style="font-size:13px;color:'+c.color+';font-weight:600;margin-bottom:4px">'+c.label+'</div>'
+      + '<div style="font-size:24px;font-weight:700;color:'+c.color+'">'+c.count+'</div>'
+      + '</div>';
+  }
+  $('projectConfigStats').innerHTML = html;
+}
 function renderProjectConfigList(){
   var configs = getProjectConfigs();
+  renderProjectConfigStats(configs);
+  if(projectConfigStatusFilter !== 'all'){
+    configs = configs.filter(function(p){
+      return getProjectConfigStatusCategory(p.status) === projectConfigStatusFilter;
+    });
+  }
   var kw = ($('projectSearch') ? $('projectSearch').value : '').trim().toLowerCase();
   if(kw){
     configs = configs.filter(function(p){
@@ -3767,7 +3808,7 @@ function pasteProjectConfigImport(){
 $('btnDoProjectConfigImport').addEventListener('click', function(){
   var t = $('projectConfigImportText').value.trim();
   if(!t){ toast('请粘贴数据','er'); return; }
-  var lines = t.split(/\n/).filter(function(l){ return l.trim(); });
+  var lines = t.split(/\r?\n|\r/).filter(function(l){ return l.trim(); });
   var configs = getProjectConfigs();
   var added = 0;
   var validStatus = ['active','paused','stopped','pending'];
@@ -3792,9 +3833,12 @@ $('btnDoProjectConfigImport').addEventListener('click', function(){
     });
     added++;
   }
+  if(added === 0){ toast('未识别到有效数据，请检查格式：项目ID | 项目名称 | 日期 | 公众号 | 状态 | 备注','er'); return; }
   saveProjectConfigs(configs);
+  var verify = getProjectConfigs();
   closeProjectConfigImport();
-  toast('成功导入 '+added+' 个项目','ok');
+  projectConfigStatusFilter = 'all';
+  toast('成功导入 '+added+' 个项目（共'+verify.length+'条）','ok');
   renderProjectConfigList();
 });
 
