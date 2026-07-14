@@ -1862,9 +1862,8 @@ function render(){
     });
     console.log('[sort] done, first game:', games[0] ? games[0].game_name : 'none');
   }
-  // --- Pin upcoming + new imports to top (only when no manual sort) ---
+  // --- Default grouping: upcoming first, then launched, empty dates at bottom ---
   if(!sortState.col){
-    console.log('[pin] no manual sort, applying default grouping');
     var upcoming = [], launched = [], noDate = [];
     for(var gi=0;gi<games.length;gi++){
       var g2 = games[gi];
@@ -1885,7 +1884,7 @@ function render(){
       var la = planDateMap[a.id], lb = planDateMap[b.id];
       return (lb||'').localeCompare(la||'');
     });
-    games = noDate.reverse().concat(upcoming, launched);  // new imports first, then upcoming, then launched
+    games = upcoming.concat(launched, noDate);  // upcoming first, then launched, empty dates last
   }
   // --- Render ---
   var tbody = $('tbody');
