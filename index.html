@@ -466,10 +466,9 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
     <label>状态</label>
     <select id="projectConfigStatus" style="width:100%;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;outline:none">
       <option value="">— 未选择 —</option>
-      <option value="active">正常</option>
-      <option value="paused">暂停</option>
-      <option value="stopped">停止</option>
-      <option value="pending">待定</option>
+      <option value="configured">已配置</option>
+      <option value="unconfigured">未配置</option>
+      <option value="no_offical">无游戏公众号</option>
     </select>
     <label>备注</label><textarea id="projectConfigRemark" rows="2" placeholder="备注信息" style="resize:vertical"></textarea>
   </div>
@@ -486,7 +485,7 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
   <div class="hd"><span>📥 项目批量导入</span><span class="x" onclick="closeProjectConfigImport()">×</span></div>
   <div class="mb">
     <p style="font-size:13px;color:var(--t2);margin-bottom:10px">支持 Excel 复制粘贴（制表符）或 CSV 格式。</p>
-    <p style="font-size:12px;color:var(--t3);margin-bottom:8px">字段顺序：项目ID | 项目名称 | 福利官入口更换日期 | 公众号 | 状态 | 备注<br><span style="color:var(--p)">状态填 active/paused/stopped/pending；日期格式 YYYY-MM-DD</span></p>
+    <p style="font-size:12px;color:var(--t3);margin-bottom:8px">字段顺序：项目ID | 项目名称 | 福利官入口更换日期 | 公众号 | 状态 | 备注<br><span style="color:var(--p)">状态填 configured/unconfigured/no_offical；日期格式 YYYY-MM-DD</span></p>
     <textarea id="projectConfigImportText" style="width:100%;min-height:120px;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:13px;outline:none;font-family:inherit;resize:vertical;margin-bottom:12px"
       placeholder='SHENQI_001	神泣	2025-07-08	神泣公众号	active	备注信息
 XCB_002	星辰变	2025-07-10	星辰变公众号	paused	暂停中'></textarea>
@@ -1550,11 +1549,12 @@ function syncGameNamesToProjects(){
     seen[gn.toLowerCase()] = true;
     if(!existingNames[gn.toLowerCase()]){
       pcs.push({
+        id: 'pc_'+Date.now()+'_'+j,
         project_id: '',
         project_name: gn,
         entry_date: '',
         official: '',
-        status: 'active',
+        status: 'unconfigured',
         remark: ''
       });
       changed = true;
@@ -3847,9 +3847,9 @@ $('btnProjectExport').addEventListener('click', function(){
 /* Render */
 var projectConfigStatusFilter = 'all';
 function getProjectConfigStatusCategory(status){
-  if(status === 'active') return 'configured';
-  if(!status) return 'unconfigured';
-  return 'other';
+  if(status === 'configured') return 'configured';
+  if(status === 'no_offical') return 'no_offical';
+  return 'unconfigured';  // default for empty or 'unconfigured'
 }
 function filterProjectConfigByStatus(cat){
   projectConfigStatusFilter = (projectConfigStatusFilter === cat) ? 'all' : cat;
@@ -3857,7 +3857,7 @@ function filterProjectConfigByStatus(cat){
 }
 function renderProjectConfigStats(configs){
   try {
-    var counts = { configured:0, unconfigured:0, other:0 };
+    var counts = { configured:0, unconfigured:0, no_offical:0 };
     for(var i=0;i<configs.length;i++){
       var cat = getProjectConfigStatusCategory(configs[i].status);
       counts[cat]++;
@@ -3866,7 +3866,7 @@ function renderProjectConfigStats(configs){
       { key:'all', label:'全部', count:configs.length, color:'#6366f1', bg:'#6366f115' },
       { key:'configured', label:'已配置', count:counts.configured, color:'#16a34a', bg:'#16a34a15' },
       { key:'unconfigured', label:'未配置', count:counts.unconfigured, color:'#f59e0b', bg:'#f59e0b15' },
-      { key:'other', label:'其他', count:counts.other, color:'#6b7280', bg:'#6b728015' }
+      { key:'no_offical', label:'无游戏公众号', count:counts.no_offical, color:'#e53935', bg:'#e5393515' }
     ];
     var html = '';
     for(var i=0;i<cards.length;i++){
@@ -3903,10 +3903,9 @@ function renderProjectConfigList(){
       });
     }
     var STATUS_MAP = {
-      'active': {label:'正常', color:'#16a34a'},
-      'paused': {label:'暂停', color:'#f59e0b'},
-      'stopped': {label:'停止', color:'#e53935'},
-      'pending': {label:'待定', color:'#6b7280'}
+      'configured': {label:'已配置', color:'#16a34a'},
+      'unconfigured': {label:'未配置', color:'#f59e0b'},
+      'no_offical': {label:'无游戏公众号', color:'#e53935'}
     };
     var html = '';
     if(configs.length===0){
@@ -4058,13 +4057,12 @@ $('btnDoProjectConfigImport').addEventListener('click', function(){
     var eid = (configs[ei].project_id||'').toLowerCase();
     if(eid) existingIds[eid] = true;
   }
-  var validStatus = ['active','paused','stopped','pending'];
+  var validStatus = ['configured','unconfigured','no_offical'];
   /* Chinese status → English mapping */
   var statusMap = {
-    '正常':'active', '启用':'active', '运行':'active', '运行中':'active',
-    '暂停':'paused', '暂停中':'paused',
-    '停止':'stopped', '已停止':'stopped', '停用':'stopped',
-    '待定':'pending', '未定':'pending', '待定中':'pending'
+    '已配置':'configured', '配置完成':'configured',
+    '未配置':'unconfigured', '未完成':'unconfigured',
+    '无游戏公众号':'no_offical', '无公众号':'no_offical', '无公众':'no_offical'
   };
   for(var i=0;i<lines.length;i++){
     var parts = lines[i].split(/\t|,/);
