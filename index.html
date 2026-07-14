@@ -305,7 +305,7 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
   <div class="wt">
     <table id="gameTable">
       <thead><tr id="gameTableHead">
-        <th>游戏名称<div class="resize-handle"></div></th><th>版本<span class="sort-btn" data-col="version" onclick="event.stopPropagation();toggleSort('version')">⇅</span><div class="resize-handle"></div></th><th style="width:350px">福利官昵称<div class="resize-handle"></div></th><th>福利官名称<div class="resize-handle"></div></th><th>二维码<div class="resize-handle"></div></th><th>获客链接<div class="resize-handle"></div></th><th>链接参数<div class="resize-handle"></div></th><th>上线日期<span class="sort-btn" data-col="launch" onclick="event.stopPropagation();toggleSort('launch')">⇅</span><div class="resize-handle"></div></th><th>备注<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>
+        <th>游戏名称<div class="resize-handle"></div></th><th style="min-width:120px">项目<div class="resize-handle"></div></th><th>版本<span class="sort-btn" data-col="version" onclick="event.stopPropagation();toggleSort('version')">⇅</span><div class="resize-handle"></div></th><th style="width:350px">福利官昵称<div class="resize-handle"></div></th><th>福利官名称<div class="resize-handle"></div></th><th>二维码<div class="resize-handle"></div></th><th>获客链接<div class="resize-handle"></div></th><th>链接参数<div class="resize-handle"></div></th><th>上线日期<span class="sort-btn" data-col="launch" onclick="event.stopPropagation();toggleSort('launch')">⇅</span><div class="resize-handle"></div></th><th>备注<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>
       </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
@@ -344,6 +344,10 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
   <div class="mb">
     <input type="hidden" id="editId">
     <label>游戏名称 *</label><input type="text" id="editGameName" placeholder="例如：王者荣耀">
+    <label>关联项目 <span style="color:var(--t3);font-weight:400">（选择项目ID-项目名称）</span></label>
+    <select id="editProjectId" style="width:100%;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;outline:none;margin-bottom:4px" onchange="onProjectSelect()">
+      <option value="">— 未选择项目 —</option>
+    </select>
     <label>领取版本 <span style="color:var(--t3);font-weight:400">（选择该游戏使用的福利领取方式版本）</span></label>
     <select id="editVersionId" style="width:100%;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;outline:none;margin-bottom:4px">
       <option value="">— 未选择版本 —</option>
@@ -459,7 +463,7 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
   <div class="hd"><span id="projectConfigEditTitle">添加项目</span><span class="x" onclick="closeProjectConfigEdit()">×</span></div>
   <div class="mb">
     <input type="hidden" id="projectConfigEditId">
-    <label>项目ID（铭文）*</label><input type="text" id="projectConfigProjectId" placeholder="例如：SHENQI_001">
+    <label>项目ID *</label><input type="text" id="projectConfigProjectId" placeholder="例如：SHENQI_001">
     <label>项目名称 *</label><input type="text" id="projectConfigProjectName" placeholder="例如：神泣">
     <label>福利官入口更换日期</label><input type="date" id="projectConfigEntryDate" placeholder="如：2025-07-08">
     <label>公众号</label><input type="text" id="projectConfigOfficial" placeholder="公众号名称">
@@ -1195,7 +1199,11 @@ function init(){
   }
   var pwd = localStorage.getItem(PWD_KEY);
   if(!pwd) showPage('setup'); else if(hasSession()) showPage('section'); else showPage('login');
-  if(hasSession()){ checkLaunchReminders(); }
+  if(hasSession()){
+    checkLaunchReminders();
+    /* Auto-match existing games to project configs by name */
+    autoMatchGamesToProjects();
+  }
 }
 
 /* ════════════════════ SETUP ════════════════════ */
@@ -1208,6 +1216,7 @@ $('setupBtn').addEventListener('click', function(){
   createSession();
   toast('密码设置成功','ok');
   showPage('section');
+  autoMatchGamesToProjects();
 });
 
 /* ════════════════════ LOGIN ════════════════════ */
@@ -1219,6 +1228,7 @@ $('loginBtn').addEventListener('click', function(){
   }
   createSession();
   showPage('section');
+  autoMatchGamesToProjects();
 });
 $('lp').addEventListener('keydown', function(e){ if(e.key==='Enter') $('loginBtn').click() });
 
@@ -1486,6 +1496,8 @@ function migrateGames(games){
     var g = games[i];
     if(!g.officer_seqs) g.officer_seqs = {};
     if(g.version_id === undefined) g.version_id = '';
+    if(g.project_id === undefined) g.project_id = '';
+    if(g.project_name === undefined) g.project_name = '';
     (g.officer_ids||[]).forEach(function(oid){
       if(!g.officer_seqs[oid]){
         var o = offs.find(function(x){return x.id===oid});
@@ -1494,6 +1506,30 @@ function migrateGames(games){
     });
   }
   return games;
+}
+
+/* Auto-match existing games to project configs by name */
+function autoMatchGamesToProjects(){
+  var games = getData();
+  if(!games.length) return;
+  var pcs = getProjectConfigs();
+  if(!pcs.length) return;
+  var changed = false;
+  for(var i=0;i<games.length;i++){
+    var g = games[i];
+    /* Skip if already has project_id */
+    if(g.project_id) continue;
+    /* Try to match by game_name to project_name */
+    var match = pcs.find(function(p){
+      return (p.project_name||'').toLowerCase() === (g.game_name||'').toLowerCase();
+    });
+    if(match){
+      g.project_id = match.project_id;
+      g.project_name = match.project_name;
+      changed = true;
+    }
+  }
+  if(changed) saveData(games);
 }
 
 /* ════════════════════ OFFICER SELECT (multi) ════════════════════ */
@@ -1512,6 +1548,16 @@ function openEditModal(game){
   $('editCustomerLink').value = game ? game.customer_link||'' : '';
   $('editLinkParams').value = game ? game.link_params||'' : '';
   $('editNotes').value = game ? game.notes||'' : '';
+  /* Populate project dropdown from project configs */
+  var pcs = getProjectConfigs();
+  var curProjectId = game ? (game.project_id||'') : '';
+  var popts = '<option value="">— 未选择项目 —</option>';
+  for(var pi=0; pi<pcs.length; pi++){
+    var pc = pcs[pi];
+    var psel = curProjectId && (pc.project_id||'').toLowerCase()===curProjectId.toLowerCase() ? ' selected' : '';
+    popts += '<option value="'+esc(pc.project_id||'')+'"'+psel+'>'+esc(pc.project_id||'')+' - '+esc(pc.project_name||'')+'</option>';
+  }
+  $('editProjectId').innerHTML = popts;
   // Populate version dropdown
   var vs = getVersions();
   var verSel = $('editVersionId');
@@ -1530,6 +1576,9 @@ function openEditModal(game){
   setTimeout(function(){$('editGameName').focus()},100);
 }
 function closeEdit(){ $('editModal').classList.remove('active') }
+function onProjectSelect(){
+  /* Called when user changes project dropdown - could auto-fill fields if needed */
+}
 function updateVersionDesc(){
   var vid = $('editVersionId').value;
   var v = vid ? getVersionById(vid) : null;
@@ -1693,9 +1742,14 @@ $('btnSaveEdit').addEventListener('click', function(){
   var gameName=$('editGameName').value.trim();
   if(!gameName){toast('请输入游戏名称','er');return}
   var id=$('editId').value;
+  var selProjectId = $('editProjectId').value;
+  var selProjectOpt = selProjectId ? $('editProjectId').selectedOptions[0] : null;
+  var selProjectName = selProjectOpt ? (selProjectOpt.textContent||'').replace(/^[^-]* - /,'') : '';
   var data = {
     id: id || genId(),
     game_name: gameName,
+    project_id: selProjectId,
+    project_name: selProjectName,
     officer_ids: selectedOfficerIds.slice(),
     officer_seqs: JSON.parse(JSON.stringify(selectedOfficerSeqs)),
     version_id: $('editVersionId').value,
@@ -1831,6 +1885,7 @@ function render(){
     games = games.filter(function(g){
       if((g.game_name||'').toLowerCase().indexOf(kw)>=0) return true;
       if((g.project_id||'').toLowerCase().indexOf(kw)>=0) return true;
+      if((g.project_name||'').toLowerCase().indexOf(kw)>=0) return true;
       var verObj = g.version_id ? getVersionById(g.version_id) : null;
       if(verObj && (verObj.name+' '+verObj.desc).toLowerCase().indexOf(kw)>=0) return true;
       var seqs = g.officer_seqs||{};
@@ -1939,8 +1994,16 @@ function render(){
     var verCell = verObj
       ? '<span style="background:'+verObj.color+'20;color:'+verObj.color+';padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px" title="'+esc(verObj.desc||'')+'">'+esc(verObj.name)+'</span>'
       : '<span style="color:var(--t3);font-size:12px">—</span>';
+    /* Project column - show project_name or project_id if no name */
+    var projectCell = '—';
+    if(g.project_name){
+      projectCell = '<span style="font-weight:600" title="'+esc(g.project_id||'')+'">'+esc(g.project_name)+'</span>';
+    } else if(g.project_id){
+      projectCell = '<span style="color:var(--t3)" title="项目ID">'+esc(g.project_id)+'</span>';
+    }
     html += '<tr onclick="selectRow(this)">'
       + '<td style="font-weight:600">'+esc(g.game_name)+'</td>'
+      + '<td>'+projectCell+'</td>'
       + '<td>'+verCell+'</td>'
       + '<td><div class="tags">'+nickTags+'</div></td>'
       + '<td>'+nameHtml+'</td>'
@@ -2138,6 +2201,9 @@ function copyFullText(id){
   var sel = (g.officer_ids||[]).map(function(oid){ return offs.find(function(x){return x.id===oid}) }).filter(Boolean);
   var lines = [];
   lines.push('游戏名称：'+(g.game_name||''));
+  if(g.project_id || g.project_name){
+    lines.push('项目：'+(g.project_id||'')+(g.project_name?' - '+g.project_name:''));
+  }
   var verObj = g.version_id ? getVersionById(g.version_id) : null;
   if(verObj) lines.push('领取版本：'+verObj.name+(verObj.desc?('（'+verObj.desc+'）'):''));
   if(g.customer_link) lines.push('获客链接：'+g.customer_link);
@@ -2567,12 +2633,13 @@ $('btnDoImport').addEventListener('click', function(){
       var cols=lines[i].split(sep);
       arr.push({
         game_name: (cols[0]||'').trim(),
-        officer_nicks: (cols[1]||'').trim(),
-        qr_url: (cols[2]||'').trim(),
-        customer_link: (cols[3]||'').trim(),
-        link_params: (cols[4]||'').trim(),
-        notes: (cols[5]||'').trim(),
-        version: (cols[6]||'').trim()
+        project_id: (cols[1]||'').trim(),
+        officer_nicks: (cols[2]||'').trim(),
+        qr_url: (cols[3]||'').trim(),
+        customer_link: (cols[4]||'').trim(),
+        link_params: (cols[5]||'').trim(),
+        notes: (cols[6]||'').trim(),
+        version: (cols[7]||'').trim()
       });
     }
   }
@@ -2608,6 +2675,8 @@ $('btnDoImport').addEventListener('click', function(){
     var entry={
       id: x.id||genId(),
       game_name: x.game_name,
+      project_id: x.project_id||'',
+      project_name: '',
       officer_ids: oids,
       version_id: verId,
       qr_url: x.qr_url||x.qr_code_url||'',
@@ -2617,6 +2686,12 @@ $('btnDoImport').addEventListener('click', function(){
       created_at: x.created_at||new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
+    /* Auto-resolve project_name from project configs */
+    if(entry.project_id){
+      var pcs = getProjectConfigs();
+      var match = pcs.find(function(p){ return (p.project_id||'').toLowerCase()===entry.project_id.toLowerCase(); });
+      if(match) entry.project_name = match.project_name;
+    }
     games.push(entry);
     count++;
   }
@@ -2650,9 +2725,9 @@ $('btnDownloadTemplate').addEventListener('click', function(){
   // CSV 模板，Excel 可直接打开
   var vs = getVersions();
   var verNames = vs.map(function(v){ return v.name }).join('/');
-  var header = 'game_name,officer_nicks,qr_url(可空),customer_link,link_params,notes,version('+(verNames||'V1/V2/V3')+')';
-  var row1 = '王者荣耀,小福,https://example.com/qr1.png,https://game.qq.com/wzry,?channel=test001,测试数据,V2';
-  var row2 = '和平精英,小礼,,https://gp.qq.com,?channel=test002,,V3';
+  var header = 'game_name,project_id(可空),officer_nicks,qr_url(可空),customer_link,link_params,notes,version('+(verNames||'V1/V2/V3')+')';
+  var row1 = '王者荣耀,SHENQI_001,小福,https://example.com/qr1.png,https://game.qq.com/wzry,?channel=test001,测试数据,V2';
+  var row2 = '和平精英,,小礼,,https://gp.qq.com,?channel=test002,,V3';
   var csv = '\uFEFF' + header + '\n' + row1 + '\n' + row2 + '\n';
   var blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
   var a = document.createElement('a');
@@ -3681,7 +3756,10 @@ $('btnDoRetentionImport').addEventListener('click', function(){
     var isNew = false;
     if(gIdx < 0){
       gIdx = games.length;
-      games.push({ id: genId(), game_name: gameName, officer_ids: [], officer_seqs: {}, retention: {} });
+      /* Auto-match project by game name */
+      var pcs2 = getProjectConfigs();
+      var pMatch = pcs2.find(function(p){ return (p.project_name||'').toLowerCase() === gameName.toLowerCase(); });
+      games.push({ id: genId(), game_name: gameName, project_id: pMatch?pMatch.project_id:'', project_name: pMatch?pMatch.project_name:'', officer_ids: [], officer_seqs: {}, retention: {} });
       isNew = true;
     }
     if(!games[gIdx].retention) games[gIdx].retention = {};
@@ -3825,7 +3903,7 @@ function renderProjectConfigList(){
     } else {
       html = '<table class="ot" id="projectConfigTable"><thead><tr>'
         +'<th style="min-width:120px">福利官入口更换日期<div class="resize-handle"></div></th>'
-        +'<th style="min-width:140px">项目ID（铭文）<div class="resize-handle"></div></th>'
+        +'<th style="min-width:140px">项目ID<div class="resize-handle"></div></th>'
         +'<th style="min-width:140px">项目名称<div class="resize-handle"></div></th>'
         +'<th style="min-width:120px">公众号<div class="resize-handle"></div></th>'
         +'<th style="min-width:80px">状态<div class="resize-handle"></div></th>'
@@ -3889,6 +3967,11 @@ $('btnSaveProjectConfig').addEventListener('click', function(){
   if(!projectId){ toast('请输入项目ID','er'); return; }
   if(!projectName){ toast('请输入项目名称','er'); return; }
   var configs = getProjectConfigs();
+  /* Check duplicate project_id (only when adding new, not when editing same record) */
+  if(!id){
+    var dup = configs.find(function(x){ return (x.project_id||'').toLowerCase() === projectId.toLowerCase(); });
+    if(dup){ toast('项目ID「'+projectId+'」已存在，无法重复录入','er'); return; }
+  }
   if(id){
     var idx = configs.findIndex(function(x){ return x.id===id });
     if(idx>=0){
@@ -3957,7 +4040,13 @@ $('btnDoProjectConfigImport').addEventListener('click', function(){
   if(!t){ toast('请粘贴数据','er'); return; }
   var lines = t.split(/\r?\n|\r/).filter(function(l){ return l.trim(); });
   var configs = getProjectConfigs();
-  var added = 0;
+  var added = 0, skipped = 0;
+  /* Build set of existing project_ids for dedup */
+  var existingIds = {};
+  for(var ei=0;ei<configs.length;ei++){
+    var eid = (configs[ei].project_id||'').toLowerCase();
+    if(eid) existingIds[eid] = true;
+  }
   var validStatus = ['active','paused','stopped','pending'];
   /* Chinese status → English mapping */
   var statusMap = {
@@ -3975,12 +4064,17 @@ $('btnDoProjectConfigImport').addEventListener('click', function(){
     var status = (parts[4]||'').trim().toLowerCase();
     var remark = (parts[5]||'').trim();
     if(!projectId || !projectName) continue;
+    /* Check for duplicate project_id */
+    if(existingIds[projectId.toLowerCase()]){
+      skipped++;
+      continue;
+    }
     /* Map Chinese status to English */
     if(status && validStatus.indexOf(status)===-1){
       var mapped = statusMap[parts[4].trim()] || statusMap[parts[4].trim().toLowerCase()];
       status = mapped || '';
     }
-    configs.push({
+    var newConfig = {
       id: 'pc_'+Date.now()+'_'+i,
       project_id: projectId,
       project_name: projectName,
@@ -3988,10 +4082,14 @@ $('btnDoProjectConfigImport').addEventListener('click', function(){
       official: official,
       status: status,
       remark: remark
-    });
+    };
+    configs.push(newConfig);
+    existingIds[projectId.toLowerCase()] = true;
     added++;
   }
-  if(added === 0){ toast('未识别到有效数据，请检查格式：项目ID | 项目名称 | 日期 | 公众号 | 状态 | 备注','er'); return; }
+  if(added === 0 && skipped === 0){
+    toast('未识别到有效数据，请检查格式：项目ID | 项目名称 | 日期 | 公众号 | 状态 | 备注','er'); return;
+  }
   saveProjectConfigs(configs);
   var verify = getProjectConfigs();
   closeProjectConfigImport();
@@ -4003,7 +4101,9 @@ $('btnDoProjectConfigImport').addEventListener('click', function(){
   for(var s=0;s<stats.length;s++){
     stats[s].classList.toggle('active', stats[s].getAttribute('data-filter')==='all');
   }
-  toast('成功导入 '+added+' 个项目（共'+verify.length+'条）','ok');
+  var msg = '成功导入 '+added+' 个项目（共'+verify.length+'条）';
+  if(skipped > 0) msg += '，跳过 '+skipped+' 个重复项目ID';
+  toast(msg,'ok');
   renderProjectConfigList();
 });
 
