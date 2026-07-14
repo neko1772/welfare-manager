@@ -305,7 +305,7 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
   <div class="wt">
     <table id="gameTable">
       <thead><tr id="gameTableHead">
-        <th>游戏名称<div class="resize-handle"></div></th><th style="min-width:120px">项目<div class="resize-handle"></div></th><th>版本<span class="sort-btn" data-col="version" onclick="event.stopPropagation();toggleSort('version')">⇅</span><div class="resize-handle"></div></th><th style="width:350px">福利官昵称<div class="resize-handle"></div></th><th>福利官名称<div class="resize-handle"></div></th><th>二维码<div class="resize-handle"></div></th><th>获客链接<div class="resize-handle"></div></th><th>链接参数<div class="resize-handle"></div></th><th>上线日期<span class="sort-btn" data-col="launch" onclick="event.stopPropagation();toggleSort('launch')">⇅</span><div class="resize-handle"></div></th><th>备注<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>
+        <th>游戏名称<div class="resize-handle"></div></th><th>版本<span class="sort-btn" data-col="version" onclick="event.stopPropagation();toggleSort('version')">⇅</span><div class="resize-handle"></div></th><th style="width:350px">福利官昵称<div class="resize-handle"></div></th><th>福利官名称<div class="resize-handle"></div></th><th>二维码<div class="resize-handle"></div></th><th>获客链接<div class="resize-handle"></div></th><th>链接参数<div class="resize-handle"></div></th><th>上线日期<span class="sort-btn" data-col="launch" onclick="event.stopPropagation();toggleSort('launch')">⇅</span><div class="resize-handle"></div></th><th>备注<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>
       </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
@@ -344,10 +344,6 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
   <div class="mb">
     <input type="hidden" id="editId">
     <label>游戏名称 *</label><input type="text" id="editGameName" placeholder="例如：王者荣耀">
-    <label>关联项目 <span style="color:var(--t3);font-weight:400">（选择项目ID-项目名称）</span></label>
-    <select id="editProjectId" style="width:100%;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;outline:none;margin-bottom:4px" onchange="onProjectSelect()">
-      <option value="">— 未选择项目 —</option>
-    </select>
     <label>领取版本 <span style="color:var(--t3);font-weight:400">（选择该游戏使用的福利领取方式版本）</span></label>
     <select id="editVersionId" style="width:100%;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;outline:none;margin-bottom:4px">
       <option value="">— 未选择版本 —</option>
@@ -1203,6 +1199,8 @@ function init(){
     checkLaunchReminders();
     /* Auto-match existing games to project configs by name */
     autoMatchGamesToProjects();
+    /* Sync game names to project config */
+    syncGameNamesToProjects();
   }
 }
 
@@ -1229,6 +1227,7 @@ $('loginBtn').addEventListener('click', function(){
   createSession();
   showPage('section');
   autoMatchGamesToProjects();
+  syncGameNamesToProjects();
 });
 $('lp').addEventListener('keydown', function(e){ if(e.key==='Enter') $('loginBtn').click() });
 
@@ -1532,6 +1531,38 @@ function autoMatchGamesToProjects(){
   if(changed) saveData(games);
 }
 
+/* Sync all unique game names to project config (as project_name, project_id empty for user to fill) */
+function syncGameNamesToProjects(){
+  var games = getData();
+  if(!games.length) return;
+  var pcs = getProjectConfigs();
+  var changed = false;
+  // Build set of existing project_names (lowercase) for quick lookup
+  var existingNames = {};
+  for(var i=0;i<pcs.length;i++){
+    existingNames[(pcs[i].project_name||'').toLowerCase()] = true;
+  }
+  // Gather unique game names
+  var seen = {};
+  for(var j=0;j<games.length;j++){
+    var gn = (games[j].game_name||'').trim();
+    if(!gn || seen[gn.toLowerCase()]) continue;
+    seen[gn.toLowerCase()] = true;
+    if(!existingNames[gn.toLowerCase()]){
+      pcs.push({
+        project_id: '',
+        project_name: gn,
+        entry_date: '',
+        official: '',
+        status: 'active',
+        remark: ''
+      });
+      changed = true;
+    }
+  }
+  if(changed) saveProjectConfigs(pcs);
+}
+
 /* ════════════════════ OFFICER SELECT (multi) ════════════════════ */
 var selectedOfficerIds = [];
 var selectedOfficerSeqs = {};  // officer_id -> seq string
@@ -1548,16 +1579,6 @@ function openEditModal(game){
   $('editCustomerLink').value = game ? game.customer_link||'' : '';
   $('editLinkParams').value = game ? game.link_params||'' : '';
   $('editNotes').value = game ? game.notes||'' : '';
-  /* Populate project dropdown from project configs */
-  var pcs = getProjectConfigs();
-  var curProjectId = game ? (game.project_id||'') : '';
-  var popts = '<option value="">— 未选择项目 —</option>';
-  for(var pi=0; pi<pcs.length; pi++){
-    var pc = pcs[pi];
-    var psel = curProjectId && (pc.project_id||'').toLowerCase()===curProjectId.toLowerCase() ? ' selected' : '';
-    popts += '<option value="'+esc(pc.project_id||'')+'"'+psel+'>'+esc(pc.project_id||'')+' - '+esc(pc.project_name||'')+'</option>';
-  }
-  $('editProjectId').innerHTML = popts;
   // Populate version dropdown
   var vs = getVersions();
   var verSel = $('editVersionId');
@@ -1576,9 +1597,6 @@ function openEditModal(game){
   setTimeout(function(){$('editGameName').focus()},100);
 }
 function closeEdit(){ $('editModal').classList.remove('active') }
-function onProjectSelect(){
-  /* Called when user changes project dropdown - could auto-fill fields if needed */
-}
 function updateVersionDesc(){
   var vid = $('editVersionId').value;
   var v = vid ? getVersionById(vid) : null;
@@ -1742,14 +1760,14 @@ $('btnSaveEdit').addEventListener('click', function(){
   var gameName=$('editGameName').value.trim();
   if(!gameName){toast('请输入游戏名称','er');return}
   var id=$('editId').value;
-  var selProjectId = $('editProjectId').value;
-  var selProjectOpt = selProjectId ? $('editProjectId').selectedOptions[0] : null;
-  var selProjectName = selProjectOpt ? (selProjectOpt.textContent||'').replace(/^[^-]* - /,'') : '';
+  // Resolve project_id from project config by matching project_name to game_name
+  var pcs = getProjectConfigs();
+  var matchedPc = pcs.find(function(p){ return (p.project_name||'').toLowerCase() === gameName.toLowerCase(); });
   var data = {
     id: id || genId(),
     game_name: gameName,
-    project_id: selProjectId,
-    project_name: selProjectName,
+    project_id: matchedPc ? (matchedPc.project_id||'') : '',
+    project_name: gameName,
     officer_ids: selectedOfficerIds.slice(),
     officer_seqs: JSON.parse(JSON.stringify(selectedOfficerSeqs)),
     version_id: $('editVersionId').value,
@@ -1994,16 +2012,8 @@ function render(){
     var verCell = verObj
       ? '<span style="background:'+verObj.color+'20;color:'+verObj.color+';padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px" title="'+esc(verObj.desc||'')+'">'+esc(verObj.name)+'</span>'
       : '<span style="color:var(--t3);font-size:12px">—</span>';
-    /* Project column - show project_name or project_id if no name */
-    var projectCell = '—';
-    if(g.project_name){
-      projectCell = '<span style="font-weight:600" title="'+esc(g.project_id||'')+'">'+esc(g.project_name)+'</span>';
-    } else if(g.project_id){
-      projectCell = '<span style="color:var(--t3)" title="项目ID">'+esc(g.project_id)+'</span>';
-    }
     html += '<tr onclick="selectRow(this)">'
       + '<td style="font-weight:600">'+esc(g.game_name)+'</td>'
-      + '<td>'+projectCell+'</td>'
       + '<td>'+verCell+'</td>'
       + '<td><div class="tags">'+nickTags+'</div></td>'
       + '<td>'+nameHtml+'</td>'
@@ -2676,7 +2686,7 @@ $('btnDoImport').addEventListener('click', function(){
       id: x.id||genId(),
       game_name: x.game_name,
       project_id: x.project_id||'',
-      project_name: '',
+      project_name: x.game_name,
       officer_ids: oids,
       version_id: verId,
       qr_url: x.qr_url||x.qr_code_url||'',
@@ -2696,6 +2706,7 @@ $('btnDoImport').addEventListener('click', function(){
     count++;
   }
   saveData(games);
+  syncGameNamesToProjects();
   toast('成功导入 '+count+' 条','ok');
   closeImport();
   render();
@@ -3759,7 +3770,7 @@ $('btnDoRetentionImport').addEventListener('click', function(){
       /* Auto-match project by game name */
       var pcs2 = getProjectConfigs();
       var pMatch = pcs2.find(function(p){ return (p.project_name||'').toLowerCase() === gameName.toLowerCase(); });
-      games.push({ id: genId(), game_name: gameName, project_id: pMatch?pMatch.project_id:'', project_name: pMatch?pMatch.project_name:'', officer_ids: [], officer_seqs: {}, retention: {} });
+      games.push({ id: genId(), game_name: gameName, project_id: pMatch?pMatch.project_id:'', project_name: gameName, officer_ids: [], officer_seqs: {}, retention: {} });
       isNew = true;
     }
     if(!games[gIdx].retention) games[gIdx].retention = {};
