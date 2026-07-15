@@ -1196,6 +1196,7 @@ function init(){
   if(!pwd) showPage('setup'); else if(hasSession()) showPage('section'); else showPage('login');
   if(hasSession()){
     checkLaunchReminders();
+    migrateProjectConfigs();
     /* Auto-match existing games to project configs by name */
     autoMatchGamesToProjects();
     /* Sync game names to project config */
@@ -1213,7 +1214,9 @@ $('setupBtn').addEventListener('click', function(){
   createSession();
   toast('密码设置成功','ok');
   showPage('section');
+  migrateProjectConfigs();
   autoMatchGamesToProjects();
+  syncGameNamesToProjects();
 });
 
 /* ════════════════════ LOGIN ════════════════════ */
@@ -1225,6 +1228,7 @@ $('loginBtn').addEventListener('click', function(){
   }
   createSession();
   showPage('section');
+  migrateProjectConfigs();
   autoMatchGamesToProjects();
   syncGameNamesToProjects();
 });
@@ -1436,6 +1440,18 @@ function getProjectConfigs(){
   try{ return JSON.parse(localStorage.getItem(PROJECT_CONFIG_KEY)) || [] }catch(e){ return [] }
 }
 function saveProjectConfigs(arr){ localStorage.setItem(PROJECT_CONFIG_KEY, JSON.stringify(arr)) }
+/* Migration: ensure every project config has an id (fixes old synced records) */
+function migrateProjectConfigs(){
+  var pcs = getProjectConfigs();
+  var changed = false;
+  for(var i=0;i<pcs.length;i++){
+    if(!pcs[i].id){
+      pcs[i].id = 'pc_'+Date.now()+'_'+i;
+      changed = true;
+    }
+  }
+  if(changed) saveProjectConfigs(pcs);
+}
 function getProjectConfigById(id){
   return getProjectConfigs().find(function(p){ return p.id===id });
 }
@@ -3885,6 +3901,7 @@ function renderProjectConfigStats(configs){
 }
 function renderProjectConfigList(){
   try {
+    migrateProjectConfigs();
     var configs = getProjectConfigs();
     if(!Array.isArray(configs)) configs = [];
     renderProjectConfigStats(configs);
