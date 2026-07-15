@@ -305,7 +305,7 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
   <div class="wt">
     <table id="gameTable">
       <thead><tr id="gameTableHead">
-        <th>游戏名称<div class="resize-handle"></div></th><th>版本<span class="sort-btn" data-col="version" onclick="event.stopPropagation();toggleSort('version')">⇅</span><div class="resize-handle"></div></th><th style="width:350px">福利官昵称<div class="resize-handle"></div></th><th>福利官名称<div class="resize-handle"></div></th><th>二维码<div class="resize-handle"></div></th><th>获客链接<div class="resize-handle"></div></th><th>链接参数<div class="resize-handle"></div></th><th>上线日期<span class="sort-btn" data-col="launch" onclick="event.stopPropagation();toggleSort('launch')">⇅</span><div class="resize-handle"></div></th><th>备注<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>
+        <th>项目名称<div class="resize-handle"></div></th><th>版本<span class="sort-btn" data-col="version" onclick="event.stopPropagation();toggleSort('version')">⇅</span><div class="resize-handle"></div></th><th style="width:350px">福利官昵称<div class="resize-handle"></div></th><th>福利官名称<div class="resize-handle"></div></th><th>二维码<div class="resize-handle"></div></th><th>获客链接<div class="resize-handle"></div></th><th>链接参数<div class="resize-handle"></div></th><th>上线日期<span class="sort-btn" data-col="launch" onclick="event.stopPropagation();toggleSort('launch')">⇅</span><div class="resize-handle"></div></th><th>备注<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>
       </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
@@ -340,10 +340,16 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
 <!-- 添加/编辑弹窗 -->
 <div class="mo" id="editModal">
 <div class="md">
-  <div class="hd"><span id="editTitle">添加游戏</span><span class="x" onclick="closeEdit()">×</span></div>
+  <div class="hd"><span id="editTitle">添加项目</span><span class="x" onclick="closeEdit()">×</span></div>
   <div class="mb">
     <input type="hidden" id="editId">
-    <label>游戏名称 *</label><input type="text" id="editGameName" placeholder="例如：王者荣耀">
+    <label>项目名称 *</label>
+    <div style="position:relative" id="projectSelectWrap">
+      <input type="text" id="editProjectSearch" placeholder="输入项目名称或项目ID搜索选择..." autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;outline:none">
+      <input type="hidden" id="editGameName">
+      <input type="hidden" id="editProjectId">
+      <div id="projectSelectList" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;max-height:240px;overflow-y:auto;background:#fff;border:1.5px solid #e0e0e0;border-radius:10px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.12)"></div>
+    </div>
     <label>领取版本 <span style="color:var(--t3);font-weight:400">（选择该游戏使用的福利领取方式版本）</span></label>
     <select id="editVersionId" style="width:100%;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;outline:none;margin-bottom:4px">
       <option value="">— 未选择版本 —</option>
@@ -394,7 +400,7 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
   <div class="hd"><span id="officerEditTitle">添加福利官</span><span class="x" onclick="closeOfficerEdit()">×</span></div>
   <div class="mb">
     <input type="hidden" id="officerEditId">
-    <label>默认序列 <span style="color:var(--t3);font-weight:400">（可选，项目序列在添加游戏时设置）</span></label><input type="text" id="officerSeq" placeholder="如：A001">
+    <label>默认序列 <span style="color:var(--t3);font-weight:400">（可选，项目序列在添加项目时设置）</span></label><input type="text" id="officerSeq" placeholder="如：A001">
     <label>昵称（对外展示）*</label><input type="text" id="officerNick" placeholder="例如：小福">
     <label>福利官名称</label><input type="text" id="officerName" placeholder="例如：王者福利官">
     <label>手机号</label><input type="text" id="officerPhone" placeholder="手机号">
@@ -417,9 +423,9 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
   <div class="hd"><span>📂 导入数据</span><span class="x" onclick="closeImport()">×</span></div>
   <div class="mb">
     <p style="font-size:13px;color:var(--t2);margin-bottom:10px">支持 JSON 数组 或 CSV 格式（可直接从 Excel 复制粘贴）。</p>
-    <p style="font-size:12px;color:var(--t3);margin-bottom:8px">字段：game_name | officer_nicks | qr_url(可空) | customer_link | link_params | notes | version<br><span style="color:var(--p)">version 填版本名称（如 V1、V2、V3），留空则不标记版本</span></p>
+    <p style="font-size:12px;color:var(--t3);margin-bottom:8px">字段：project_name/project_id | officer_nicks | qr_url(可空) | customer_link | link_params | notes | version<br><span style="color:var(--p)">第一列可填项目名称或项目ID；version 填版本名称（如 V1、V2、V3），留空则不标记版本</span></p>
     <textarea id="importText" style="width:100%;min-height:120px;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:13px;outline:none;font-family:inherit;resize:vertical;margin-bottom:12px" placeholder='王者荣耀,小福,https://qr.png,https://game.com,?chan=001,备注,V2
-和平精英,小礼,https://qr.png,https://game.com,?chan=002,,V3'></textarea>
+SHENQI_001,小礼,https://qr.png,https://game.com,?chan=002,,V3'></textarea>
     <div style="display:flex;gap:10px">
       <button class="btn btn-o" onclick="pasteImport()">📋 从剪贴板粘贴</button>
     </div>
@@ -985,7 +991,7 @@ function enterSection(section){
   $('btnAdd').style.display = section==='welfare' ? '' : 'none';
   $('btnSync').style.display = section==='welfare'||section==='retention' ? '' : 'none';
   // Search placeholder
-  if(section==='welfare') $('searchInput').placeholder = '🔍 搜索游戏名称、福利官...';
+  if(section==='welfare') $('searchInput').placeholder = '🔍 搜索项目名称、福利官...';
   else if(section==='retention') $('searchInput').placeholder = '🔍 搜索项目名、专属组、条件...';
   else $('searchInput').placeholder = '🔍 搜索项目ID、项目名称...';
   $('searchInput').oninput = section==='retention' ? function(){renderRetentionList()} : (section==='project_config' ? function(){renderProjectConfigList()} : function(){render()});
@@ -1105,7 +1111,7 @@ function gotoWelfareGame(gameId, date){
   $('officerStats').style.display = '';
   $('gameTable').parentNode.style.display = '';
   $('btnAdd').style.display = '';
-  $('searchInput').placeholder = '搜索游戏名称、福利官...';
+  $('searchInput').placeholder = '搜索项目名称、福利官...';
   $('searchInput').oninput = function(){ render() };
   // Pre-fill search with game name
   $('searchInput').value = game.game_name||'';
@@ -1589,8 +1595,10 @@ function openEditModal(game){
     selectedOfficerSeqs = JSON.parse(JSON.stringify(game.officer_seqs));
   }
   $('editId').value = game ? game.id : '';
-  $('editTitle').textContent = game ? '编辑游戏' : '添加游戏';
+  $('editTitle').textContent = game ? '编辑项目' : '添加项目';
   $('editGameName').value = game ? game.game_name||'' : '';
+  $('editProjectSearch').value = game ? game.game_name||'' : '';
+  $('editProjectId').value = game ? game.project_id||'' : '';
   $('editQrUrl').value = game ? game.qr_url||'' : '';
   $('editCustomerLink').value = game ? game.customer_link||'' : '';
   $('editLinkParams').value = game ? game.link_params||'' : '';
@@ -1610,7 +1618,7 @@ function openEditModal(game){
   updateQrPreview($('editQrUrl').value);
   renderOfficerSelect();
   $('editModal').classList.add('active');
-  setTimeout(function(){$('editGameName').focus()},100);
+  setTimeout(function(){$('editProjectSearch').focus()},100);
 }
 function closeEdit(){ $('editModal').classList.remove('active') }
 function updateVersionDesc(){
@@ -1726,8 +1734,47 @@ function removeOfficer(oid){
   if(idx>=0){ selectedOfficerIds.splice(idx,1); delete selectedOfficerSeqs[oid]; }
   renderOfficerSelect();
 }
-// Update seq preview when game name changes
-$('editGameName').addEventListener('input', function(){
+// Project search dropdown
+function showProjectSelect(){
+  renderProjectSelectList('');
+  $('projectSelectList').style.display='block';
+}
+function hideProjectSelect(){
+  setTimeout(function(){ $('projectSelectList').style.display='none'; }, 200);
+}
+function renderProjectSelectList(query){
+  var pcs = getProjectConfigs();
+  var q = (query||'').toLowerCase().trim();
+  var html = '';
+  var shown = 0;
+  for(var i=0;i<pcs.length;i++){
+    var pc = pcs[i];
+    var pname = pc.project_name||'';
+    var pid = pc.project_id||'';
+    if(q && pname.toLowerCase().indexOf(q)<0 && pid.toLowerCase().indexOf(q)<0) continue;
+    var label = pname || '(无名)';
+    if(pid) label += '  ['+pid+']';
+    html += '<div onmousedown="selectProject(\''+esc(pname).replace(/'/g,"\\'")+'\',\''+esc(pid).replace(/'/g,"\\'")+'\')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:14px;transition:background .15s" onmouseover="this.style.background=\'#f5f7ff\'" onmouseout="this.style.background=\'#fff\'">'+esc(label)+'</div>';
+    shown++;
+  }
+  if(shown===0){
+    html = '<div style="padding:14px;color:var(--t3);text-align:center;font-size:13px">未找到匹配项目，请先在项目配置中添加</div>';
+  }
+  $('projectSelectList').innerHTML = html;
+}
+function selectProject(name, id){
+  $('editProjectSearch').value = name;
+  $('editGameName').value = name;
+  $('editProjectId').value = id || '';
+  $('projectSelectList').style.display='none';
+  if(selectedOfficerIds.length>0) renderSeqList();
+}
+$('editProjectSearch').addEventListener('focus', showProjectSelect);
+$('editProjectSearch').addEventListener('blur', hideProjectSelect);
+$('editProjectSearch').addEventListener('input', function(){
+  $('editGameName').value = this.value.trim();
+  $('editProjectId').value = '';
+  renderProjectSelectList(this.value);
   if(selectedOfficerIds.length>0) renderSeqList();
 });
 
@@ -1774,15 +1821,19 @@ document.addEventListener('paste', function(e){
 
 $('btnSaveEdit').addEventListener('click', function(){
   var gameName=$('editGameName').value.trim();
-  if(!gameName){toast('请输入游戏名称','er');return}
+  var selProjectId=$('editProjectId').value.trim();
+  if(!gameName){toast('请选择项目名称','er');return}
   var id=$('editId').value;
-  // Resolve project_id from project config by matching project_name to game_name
-  var pcs = getProjectConfigs();
-  var matchedPc = pcs.find(function(p){ return (p.project_name||'').toLowerCase() === gameName.toLowerCase(); });
+  // Resolve project_id from project config if not already set
+  if(!selProjectId){
+    var pcs = getProjectConfigs();
+    var matchedPc = pcs.find(function(p){ return (p.project_name||'').toLowerCase() === gameName.toLowerCase(); });
+    if(matchedPc) selProjectId = matchedPc.project_id||'';
+  }
   var data = {
     id: id || genId(),
     game_name: gameName,
-    project_id: matchedPc ? (matchedPc.project_id||'') : '',
+    project_id: selProjectId,
     project_name: gameName,
     officer_ids: selectedOfficerIds.slice(),
     officer_seqs: JSON.parse(JSON.stringify(selectedOfficerSeqs)),
@@ -2226,7 +2277,7 @@ function copyFullText(id){
   var seqs = g.officer_seqs||{};
   var sel = (g.officer_ids||[]).map(function(oid){ return offs.find(function(x){return x.id===oid}) }).filter(Boolean);
   var lines = [];
-  lines.push('游戏名称：'+(g.game_name||''));
+  lines.push('项目名称：'+(g.game_name||''));
   if(g.project_id || g.project_name){
     lines.push('项目：'+(g.project_id||'')+(g.project_name?' - '+g.project_name:''));
   }
@@ -2654,19 +2705,34 @@ $('btnDoImport').addEventListener('click', function(){
     if(lines.length===0){toast('未检测到数据','er');return}
     var start=0;
     var first=lines[0].split(sep);
-    if(first[0].toLowerCase().indexOf('game')>=0 || first[0].indexOf('名称')>=0) start=1;
+    var hasHeader = first[0].toLowerCase().indexOf('game')>=0 || first[0].toLowerCase().indexOf('project')>=0 || first[0].indexOf('名称')>=0 || first[0].indexOf('项目')>=0;
+    if(hasHeader) start=1;
+    /* Detect format: old 8-col (game_name,project_id,...) vs new 7-col (project_name/id,...) */
+    var oldFormat = hasHeader && first.length>=2 && (first[1].toLowerCase().indexOf('project_id')>=0 || first[1].toLowerCase().indexOf('project_id')>=0);
     for(var i=start;i<lines.length;i++){
       var cols=lines[i].split(sep);
-      arr.push({
-        game_name: (cols[0]||'').trim(),
-        project_id: (cols[1]||'').trim(),
-        officer_nicks: (cols[2]||'').trim(),
-        qr_url: (cols[3]||'').trim(),
-        customer_link: (cols[4]||'').trim(),
-        link_params: (cols[5]||'').trim(),
-        notes: (cols[6]||'').trim(),
-        version: (cols[7]||'').trim()
-      });
+      if(oldFormat){
+        arr.push({
+          game_name: (cols[0]||'').trim(),
+          project_id: (cols[1]||'').trim(),
+          officer_nicks: (cols[2]||'').trim(),
+          qr_url: (cols[3]||'').trim(),
+          customer_link: (cols[4]||'').trim(),
+          link_params: (cols[5]||'').trim(),
+          notes: (cols[6]||'').trim(),
+          version: (cols[7]||'').trim()
+        });
+      } else {
+        arr.push({
+          project_key: (cols[0]||'').trim(),
+          officer_nicks: (cols[1]||'').trim(),
+          qr_url: (cols[2]||'').trim(),
+          customer_link: (cols[3]||'').trim(),
+          link_params: (cols[4]||'').trim(),
+          notes: (cols[5]||'').trim(),
+          version: (cols[6]||'').trim()
+        });
+      }
     }
   }
   var games=getData();
@@ -2674,7 +2740,33 @@ $('btnDoImport').addEventListener('click', function(){
   var count=0;
   for(var i=0;i<arr.length;i++){
     var x=arr[i];
-    if(!x.game_name) continue;
+    /* Resolve project_key (new format) or game_name+project_id (old format) */
+    var gameName = '';
+    var projectId = '';
+    if(x.project_key){
+      var pcs = getProjectConfigs();
+      var pkLower = x.project_key.toLowerCase();
+      /* Try matching by project_id first */
+      var matchById = pcs.find(function(p){ return (p.project_id||'').toLowerCase() === pkLower; });
+      if(matchById){
+        gameName = matchById.project_name || x.project_key;
+        projectId = matchById.project_id || '';
+      } else {
+        /* Try matching by project_name */
+        var matchByName = pcs.find(function(p){ return (p.project_name||'').toLowerCase() === pkLower; });
+        if(matchByName){
+          gameName = matchByName.project_name || x.project_key;
+          projectId = matchByName.project_id || '';
+        } else {
+          /* No match — use as-is (might be a new project name) */
+          gameName = x.project_key;
+        }
+      }
+    } else {
+      gameName = x.game_name || '';
+      projectId = x.project_id || '';
+    }
+    if(!gameName) continue;
     // Resolve officer_nicks to officer_ids
     var oids=[];
     if(x.officer_nicks){
@@ -2700,9 +2792,9 @@ $('btnDoImport').addEventListener('click', function(){
     }
     var entry={
       id: x.id||genId(),
-      game_name: x.game_name,
-      project_id: x.project_id||'',
-      project_name: x.game_name,
+      game_name: gameName,
+      project_id: projectId,
+      project_name: gameName,
       officer_ids: oids,
       version_id: verId,
       qr_url: x.qr_url||x.qr_code_url||'',
@@ -2712,12 +2804,6 @@ $('btnDoImport').addEventListener('click', function(){
       created_at: x.created_at||new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
-    /* Auto-resolve project_name from project configs */
-    if(entry.project_id){
-      var pcs = getProjectConfigs();
-      var match = pcs.find(function(p){ return (p.project_id||'').toLowerCase()===entry.project_id.toLowerCase(); });
-      if(match) entry.project_name = match.project_name;
-    }
     games.push(entry);
     count++;
   }
@@ -2752,9 +2838,9 @@ $('btnDownloadTemplate').addEventListener('click', function(){
   // CSV 模板，Excel 可直接打开
   var vs = getVersions();
   var verNames = vs.map(function(v){ return v.name }).join('/');
-  var header = 'game_name,project_id(可空),officer_nicks,qr_url(可空),customer_link,link_params,notes,version('+(verNames||'V1/V2/V3')+')';
-  var row1 = '王者荣耀,SHENQI_001,小福,https://example.com/qr1.png,https://game.qq.com/wzry,?channel=test001,测试数据,V2';
-  var row2 = '和平精英,,小礼,,https://gp.qq.com,?channel=test002,,V3';
+  var header = 'project_name/project_id,officer_nicks,qr_url(可空),customer_link,link_params,notes,version('+(verNames||'V1/V2/V3')+')';
+  var row1 = '王者荣耀,小福,https://example.com/qr1.png,https://game.qq.com/wzry,?channel=test001,测试数据,V2';
+  var row2 = 'SHENQI_002,小礼,,https://gp.qq.com,?channel=test002,,V3';
   var csv = '\uFEFF' + header + '\n' + row1 + '\n' + row2 + '\n';
   var blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
   var a = document.createElement('a');
