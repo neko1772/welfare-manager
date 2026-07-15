@@ -4268,7 +4268,7 @@ $('btnDoProjectConfigImport').addEventListener('click', function(){
     }
     /* Map Chinese status to English */
     if(status && validStatus.indexOf(status)===-1){
-      var mapped = statusMap[parts[4].trim()] || statusMap[parts[4].trim().toLowerCase()];
+      var mapped = statusMap[status];
       status = mapped || '';
     }
     var newConfig = {
@@ -4286,7 +4286,7 @@ $('btnDoProjectConfigImport').addEventListener('click', function(){
     added++;
   }
   if(added === 0 && skipped === 0){
-    toast('未识别到有效数据，请检查格式：项目ID | 项目名称 | 日期 | 公众号 | 状态 | 备注','er'); return;
+    toast('未识别到有效数据，请检查格式：项目ID | 项目名称 | 日期 | 公众号 | 平台 | 状态 | 备注','er'); return;
   }
   saveProjectConfigs(configs);
   var verify = getProjectConfigs();
