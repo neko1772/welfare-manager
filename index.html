@@ -317,8 +317,9 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
 <div id="retentionPage">
   <div style="padding:20px;overflow-x:auto">
     <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
-      <input type="text" id="retentionSearch" placeholder="🔍 搜索项目名、专属组、条件..." style="flex:1;min-width:200px;padding:9px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none" oninput="renderRetentionList()">
+      <input type="text" id="retentionSearch" placeholder="🔍 搜索项目ID、名称、专属组、条件..." style="flex:1;min-width:200px;padding:9px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none" oninput="renderRetentionList()">
       <span style="font-size:13px;color:var(--t3)">按项目维度管理维系配置</span>
+      <button class="btn" id="btnClearRetention" style="font-size:13px;padding:8px 16px;white-space:nowrap;background:#fef2f2;color:#e53935;border:1.5px solid #fecaca">🗑 清空数据</button>
     </div>
     <div id="retentionList"></div>
   </div>
@@ -757,7 +758,7 @@ XCB_002	星辰变	2025-07-10	星辰变公众号	欢娱	unconfigured	暂停中'><
   <div class="hd"><span>🛡 维系配置</span><span class="x" onclick="closeRetention()">×</span></div>
   <div class="mb">
     <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
-      <input type="text" id="retentionSearch" placeholder="🔍 搜索项目名、专属组、条件..." style="flex:1;min-width:200px;padding:9px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none" oninput="renderRetentionList()">
+      <input type="text" id="retentionSearch" placeholder="🔍 搜索项目ID、名称、专属组、条件..." style="flex:1;min-width:200px;padding:9px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none" oninput="renderRetentionList()">
       <span style="font-size:13px;color:var(--t3)">按项目维度管理维系配置</span>
     </div>
     <div id="retentionList"></div>
@@ -866,12 +867,12 @@ XCB_002	星辰变	2025-07-10	星辰变公众号	欢娱	unconfigured	暂停中'><
 <div class="md" style="max-width:680px">
   <div class="hd"><span>📥 批量导入维系配置</span><span class="x" onclick="closeRetentionImport()">×</span></div>
   <div class="mb">
-    <p style="font-size:13px;color:var(--t2);margin-bottom:10px">支持 Excel 复制粘贴（制表符）或 CSV 格式。按项目名称匹配已有游戏，不存在则新建。</p>
-    <p style="font-size:12px;color:var(--t3);margin-bottom:8px">字段顺序：项目名 | 专属池组 | 累充 | 充值周期 | 周期金额 | 推送组 | 推送条件 | 盒子组 | 盒子条件<br><span style="color:var(--p)">组填 A/B/C/SH；不需要的列留空但保留制表符分隔</span></p>
+    <p style="font-size:13px;color:var(--t2);margin-bottom:10px">支持 Excel 复制粘贴（制表符）或 CSV 格式。按项目ID匹配已有项目，不存在则新建。</p>
+    <p style="font-size:12px;color:var(--t3);margin-bottom:8px">字段顺序：项目ID | 专属池组 | 累充 | 充值周期 | 周期金额 | 推送组 | 推送条件 | 盒子组 | 盒子条件<br><span style="color:var(--p)">组填 A/B/C/SH；不需要的列留空但保留制表符分隔</span></p>
     <textarea id="retentionImportText" style="width:100%;min-height:140px;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:13px;outline:none;font-family:inherit;resize:vertical;margin-bottom:12px"
-      placeholder="王者荣耀	A	≥5000	30天	≥1000	A	累充≥3000且近7天活跃	B	累计登录≥7天且充值≥500&#10;和平精英	B	≥3000	30天	≥800			C	累计登录≥5天"></textarea>
+      placeholder="SHENQI_001	A	≥5000	30天	≥1000	A	累充≥3000且近7天活跃	B	累计登录≥7天且充值≥500&#10;XCB_002	B	≥3000	30天	≥800			C	累计登录≥5天"></textarea>
     <div style="font-size:12px;color:var(--t3);margin-bottom:8px">
-      <b>说明：</b>每行一个项目，列之间用 Tab 或逗号分隔。项目名必须填写，其余列可留空。留空的配置项不会被覆盖。
+      <b>说明：</b>每行一个项目，列之间用 Tab 或逗号分隔。项目ID必须填写，其余列可留空。留空的配置项不会被覆盖。
     </div>
   </div>
   <div class="mf">
@@ -3609,6 +3610,21 @@ $('btnRetentionImport').addEventListener('click', function(){
   $('retentionImportText').value = '';
 });
 
+$('btnClearRetention').addEventListener('click', function(){
+  if(!confirm('确认清空全部维系配置数据？此操作不可恢复。\n\n仅清空各项目的维系配置内容，不删除项目本身。')) return;
+  var games = getData();
+  var changed = false;
+  for(var i=0;i<games.length;i++){
+    if(games[i].retention){
+      games[i].retention = {};
+      changed = true;
+    }
+  }
+  if(changed) saveData(games);
+  toast('维系配置数据已清空','ok');
+  renderRetentionList();
+});
+
 function renderRetentionList(){
   try {
     var games = getData();
@@ -3618,7 +3634,7 @@ function renderRetentionList(){
     var kw = ($('retentionSearch') ? $('retentionSearch').value : '').trim().toLowerCase();
     var html = '';
     if(games.length===0){
-      html = '<div style="padding:20px;color:var(--t3);text-align:center">暂无项目，请先在项目配置中添加游戏</div>';
+      html = '<div style="padding:20px;color:var(--t3);text-align:center">暂无项目，请先在项目配置中添加项目</div>';
     } else {
       html = '<table class="ot" id="retentionTable"><thead><tr>'
         +'<th style="min-width:130px">项目<div class="resize-handle"></div></th>'
@@ -3630,9 +3646,14 @@ function renderRetentionList(){
       for(var i=0;i<games.length;i++){
         var g = games[i];
         var ret = getRetention(g);
+        // Resolve project display name from project config by project_id
+        var pcs = getProjectConfigs();
+        var pc = pcs.find(function(p){ return p.project_id && g.project_id && p.project_id.toLowerCase()===g.project_id.toLowerCase(); });
+        var displayName = pc ? pc.project_name : (g.game_name||'-');
+        var displayId = pc ? pc.project_id : (g.project_id||'');
         // Filter
         if(kw){
-          var matchText = (g.game_name||'').toLowerCase() + ' ' + (g.project_id||'').toLowerCase();
+          var matchText = (displayName||'').toLowerCase() + ' ' + (displayId||'').toLowerCase();
           var poolS = getRetentionSummary(ret,'pool');
           var pushS = getRetentionSummary(ret,'push');
           var boxS = getRetentionSummary(ret,'box');
@@ -3642,7 +3663,7 @@ function renderRetentionList(){
           if(matchText.toLowerCase().indexOf(kw)<0) continue;
         }
         html += '<tr>'
-          + '<td style="font-weight:600">'+esc(g.game_name||'-')+'</td>'
+          + '<td style="font-weight:600" title="'+esc(g.project_id||'')+'">'+esc(displayName)+'</td>'
           + renderRetentionCell(ret, 'pool')
           + renderRetentionCell(ret, 'push')
           + renderRetentionCell(ret, 'box')
@@ -3682,8 +3703,12 @@ function editRetention(gameId){
   var g = getGameById(gameId);
   if(!g) return;
   $('retentionGameId').value = gameId;
-  $('retentionGameName').textContent = g.game_name || '-';
-  $('retentionEditTitle').textContent = '维系配置 - ' + (g.game_name || '');
+  // Resolve display name from project config by project_id
+  var pcs3 = getProjectConfigs();
+  var pc3 = pcs3.find(function(p){ return p.project_id && g.project_id && p.project_id.toLowerCase()===g.project_id.toLowerCase(); });
+  var retName = pc3 ? pc3.project_name : (g.game_name || '-');
+  $('retentionGameName').textContent = retName;
+  $('retentionEditTitle').textContent = '维系配置 - ' + retName;
   var ret = getRetention(g);
   // Pool
   var pool = ret.pool || {};
@@ -3854,17 +3879,18 @@ $('btnDoRetentionImport').addEventListener('click', function(){
   var validGroups = ['A','B','C','SH'];
   for(var i=0;i<lines.length;i++){
     var parts = lines[i].split(/\t|,/);
-    var gameName = (parts[0]||'').trim();
-    if(!gameName) continue;
-    // Find or create game
-    var gIdx = games.findIndex(function(g){ return (g.game_name||'').toLowerCase() === gameName.toLowerCase() });
+    var projectId = (parts[0]||'').trim();
+    if(!projectId) continue;
+    // Resolve project info from project config by project_id
+    var pcs2 = getProjectConfigs();
+    var pMatch = pcs2.find(function(p){ return p.project_id && p.project_id.toLowerCase()===projectId.toLowerCase(); });
+    var projectName = pMatch ? pMatch.project_name : projectId;
+    // Find existing game by project_id
+    var gIdx = games.findIndex(function(g){ return g.project_id && g.project_id.toLowerCase()===projectId.toLowerCase(); });
     var isNew = false;
     if(gIdx < 0){
       gIdx = games.length;
-      /* Auto-match project by game name */
-      var pcs2 = getProjectConfigs();
-      var pMatch = pcs2.find(function(p){ return (p.project_name||'').toLowerCase() === gameName.toLowerCase(); });
-      games.push({ id: genId(), game_name: gameName, project_id: pMatch?pMatch.project_id:'', project_name: gameName, officer_ids: [], officer_seqs: {}, retention: {} });
+      games.push({ id: genId(), game_name: projectName, project_id: projectId, project_name: projectName, officer_ids: [], officer_seqs: {}, retention: {} });
       isNew = true;
     }
     if(!games[gIdx].retention) games[gIdx].retention = {};
