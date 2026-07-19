@@ -235,7 +235,7 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
     <!-- Section badge + back -->
     <span class="section-badge welfare" id="sectionBadgeWelfare" onclick="handleSectionBadgeClick()">🎮 福利官管理 ↺</span>
     <span class="section-badge retention" id="sectionBadgeRetention" onclick="goBackToSection()" style="display:none">🛡 维系配置 ↺</span>
-    <span class="section-badge project" id="sectionBadgeProject" onclick="goBackToSection()" style="display:none">📋 项目配置 ↺</span>
+    <span class="section-badge project" id="sectionBadgeProject" onclick="handleProjectBadgeClick()" style="display:none">📋 项目配置 ↺</span>
     <!-- Common -->
     <input type="text" id="searchInput" placeholder="🔍 搜索...">
     <span class="count" id="countLabel"></span>
@@ -333,9 +333,11 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
       <input type="text" id="projectSearch" placeholder="🔍 搜索项目ID、名称、公众号、备注..." style="flex:1;min-width:200px;padding:9px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none" oninput="renderProjectConfigList()">
       <button class="btn btn-p" id="btnAddProjectConfig" style="font-size:13px;padding:8px 16px;white-space:nowrap">＋ 添加项目</button>
       <button class="btn btn-o" id="btnImportProjectConfig" style="font-size:13px;padding:8px 16px;white-space:nowrap">📥 批量导入</button>
-      <button class="btn" id="btnClearProjectConfig" style="font-size:13px;padding:8px 16px;white-space:nowrap;background:#fef2f2;color:#e53935;border:1.5px solid #fecaca">🗑 清空数据</button>
+      <button class="btn-sm" id="pcDelModeBadge" style="display:none;border-color:var(--d);color:var(--d);font-weight:700;font-size:13px;padding:8px 16px;white-space:nowrap" onclick="disableProjectConfigDeleteMode()">🔒 删除模式（点此关闭）</button>
     </div>
-    <div id="projectConfigList"></div>
+    <div id="projectConfigListWrap" style="max-height:calc(100vh - 280px);overflow:auto;border-radius:10px">
+      <div id="projectConfigList"></div>
+    </div>
   </div>
 </div>
 
@@ -1154,6 +1156,21 @@ function handleSectionBadgeClick(){
   }
 }
 
+/* Project config: double-click badge to enter delete mode (hidden feature) */
+var _projectBadgeClickTimer = null;
+function handleProjectBadgeClick(){
+  if(_projectBadgeClickTimer){
+    clearTimeout(_projectBadgeClickTimer);
+    _projectBadgeClickTimer = null;
+    enableProjectConfigDeleteMode();
+  } else {
+    _projectBadgeClickTimer = setTimeout(function(){
+      _projectBadgeClickTimer = null;
+      goBackToSection();
+    }, 280);
+  }
+}
+
 function formatAmount(val){
   if(!val && val!==0) return '0';
   var s = String(val).trim();
@@ -1883,6 +1900,30 @@ function disableDeleteMode(){
   toast('删除模式已关闭','ok');
 }
 
+/* Project config delete mode (hidden, requires admin) */
+var projectConfigDeleteMode = false;
+function enableProjectConfigDeleteMode(){
+  requireAdmin(function(){
+    projectConfigDeleteMode = true;
+    $('pcDelModeBadge').style.display = 'inline-flex';
+    renderProjectConfigList();
+    toast('删除模式已开启','ok');
+  });
+}
+function disableProjectConfigDeleteMode(){
+  projectConfigDeleteMode = false;
+  $('pcDelModeBadge').style.display = 'none';
+  renderProjectConfigList();
+  toast('删除模式已关闭','ok');
+}
+
+/* Chinese date format: X月X日 */
+function formatChineseDate(d){
+  var dt = new Date(d + 'T00:00:00');
+  if(isNaN(dt.getTime())) return d;
+  return (dt.getMonth() + 1) + '月' + dt.getDate() + '日';
+}
+
 // Officer view stats filter
 function setOfficerFilter(filter){
   if(officerFilter === filter){ officerFilter = 'all'; }
@@ -2054,19 +2095,32 @@ function render(){
     var qrImg = g.qr_url ? '<img src="'+esc(g.qr_url)+'" style="width:48px;height:48px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="showQr(\''+esc(g.qr_url)+'\',\''+esc(g.game_name)+'\')">' : '—';
     var link = g.customer_link||'';
     var fullLink = link+(g.link_params||'');
-    // Plan date cell (shows most recent plan date)
-    var planDate = planDateMap[g.id];
+    // Plan date cell: show all plans with type + countdown
+    var gamePlans = getGamePlansSorted(g.id);
     var launchCell = '—';
-    if(planDate){
-      var planDateObj = new Date(planDate+'T00:00:00');
-      var diffDays = Math.round((planDateObj - today) / 86400000);
-      var diffStr = '', diffColor = '', diffBg = '';
-      if(diffDays === 0){ diffStr = '⏰今天'; diffColor = '#fff'; diffBg = '#e53935'; }
-      else if(diffDays === 1){ diffStr = '⏰明天'; diffColor = '#fff'; diffBg = '#f59e0b'; }
-      else if(diffDays > 0){ diffStr = diffDays+'天后'; diffColor = '#16a34a'; diffBg = '#f0fdf4'; }
-      else { diffStr = '已上线'+Math.abs(diffDays)+'天'; diffColor = 'var(--t3)'; diffBg = 'transparent'; }
-      launchCell = '<div style="font-size:13px;font-weight:600">'+esc(planDate)+'</div>'
-        + '<span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;color:'+diffColor+';background:'+diffBg+';'+(diffBg==='transparent'?'border:1px solid #e0e0e0':'')+'">'+diffStr+'</span>';
+    if(gamePlans.length > 0){
+      var lines = [];
+      for(var pi2=0;pi2<gamePlans.length;pi2++){
+        var gp = gamePlans[pi2];
+        if(!gp.date) continue;
+        var gpDate = new Date(gp.date+'T00:00:00');
+        var gpDiff = Math.round((gpDate - today) / 86400000);
+        var isLaunch = (gp.type === 'launch');
+        var typeBadge = isLaunch ? '上线' : '版更';
+        var typeBg = isLaunch ? '#dbeafe' : '#dcfce7';
+        var typeColor = isLaunch ? '#1d4ed8' : '#15803d';
+        var statusText = '', statusColor = '', statusBg = '';
+        if(gpDiff === 0){ statusText = '今天'; statusColor = '#fff'; statusBg = '#e53935'; }
+        else if(gpDiff === 1){ statusText = '明天'; statusColor = '#fff'; statusBg = '#f59e0b'; }
+        else if(gpDiff > 0){ statusText = (isLaunch ? '上线' : '版更') + gpDiff + '天后'; statusColor = '#16a34a'; statusBg = '#f0fdf4'; }
+        else { statusText = '已上线' + Math.abs(gpDiff) + '天'; statusColor = 'var(--t3)'; statusBg = 'transparent'; }
+        var line = '<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px">'
+          + '<span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:700;background:'+typeBg+';color:'+typeColor+';white-space:nowrap">'+typeBadge+'</span>'
+          + '<span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:600;color:'+statusColor+';background:'+statusBg+';'+(statusBg==='transparent'?'border:1px solid #e0e0e0':'')+';white-space:nowrap">'+statusText+'</span>'
+          + '</div>';
+        lines.push(line);
+      }
+      launchCell = lines.length > 0 ? lines.join('') : '—';
     }
     // Version tag
     var verObj = g.version_id ? getVersionById(g.version_id) : null;
@@ -4071,6 +4125,7 @@ function renderProjectConfigList(){
       html = '<div style="padding:20px;color:var(--t3);text-align:center">暂无项目，点击「＋ 添加项目」创建</div>';
     } else {
       html = '<table class="ot" id="projectConfigTable"><thead><tr>'
+        +'<th style="width:40px;min-width:40px">#<div class="resize-handle"></div></th>'
         +'<th style="min-width:120px">福利官入口更换日期<div class="resize-handle"></div></th>'
         +'<th style="min-width:140px">项目ID<div class="resize-handle"></div></th>'
         +'<th style="min-width:140px">项目名称<div class="resize-handle"></div></th>'
@@ -4083,8 +4138,9 @@ function renderProjectConfigList(){
       for(var i=0;i<configs.length;i++){
         var p = configs[i];
         var si = STATUS_MAP[p.status] || null;
-        var entryDateDisplay = p.entry_date ? formatTimelineDate(p.entry_date) : '<span style="color:var(--t3)">-</span>';
+        var entryDateDisplay = p.entry_date ? formatChineseDate(p.entry_date) : '<span style="color:var(--t3)">-</span>';
         html += '<tr>'
+          + '<td style="color:var(--t3);text-align:center">'+(i+1)+'</td>'
           + '<td class="nw" style="color:var(--t2)">'+entryDateDisplay+'</td>'
           + '<td class="mono">'+esc(p.project_id||'-')+'</td>'
           + '<td style="font-weight:600">'+esc(p.project_name||'-')+'</td>'
@@ -4094,7 +4150,7 @@ function renderProjectConfigList(){
           + '<td style="color:var(--t2);font-size:13px">'+esc(p.remark||'-')+'</td>'
           + '<td class="act" style="white-space:nowrap">'
           + '<button class="btn-sm pri" onclick="event.stopPropagation();openProjectConfigEdit(\''+p.id+'\')" style="font-size:12px;padding:4px 10px">编辑</button>'
-          + '<button class="btn-sm" onclick="event.stopPropagation();deleteProjectConfig(\''+p.id+'\')" style="font-size:12px;padding:4px 10px;border-color:var(--d);color:var(--d)">删除</button>'
+          + (projectConfigDeleteMode ? '<button class="btn-sm" onclick="event.stopPropagation();deleteProjectConfig(\''+p.id+'\')" style="font-size:12px;padding:4px 10px;border-color:var(--d);color:var(--d)">删除</button>' : '')
           + '</td>'
           + '</tr>';
       }
@@ -4183,11 +4239,13 @@ $('btnSaveProjectConfig').addEventListener('click', function(){
 /* Delete */
 function deleteProjectConfig(id){
   if(!confirm('确定删除该项目配置？')) return;
-  var configs = getProjectConfigs();
-  configs = configs.filter(function(x){ return x.id!==id });
-  saveProjectConfigs(configs);
-  toast('已删除','ok');
-  renderProjectConfigList();
+  requireAdmin(function(){
+    var configs = getProjectConfigs();
+    configs = configs.filter(function(x){ return x.id!==id });
+    saveProjectConfigs(configs);
+    toast('已删除','ok');
+    renderProjectConfigList();
+  });
 }
 
 /* Add button */
@@ -4196,13 +4254,6 @@ $('btnAddProjectConfig').addEventListener('click', function(){
 });
 $('btnProjectAdd').addEventListener('click', function(){
   openProjectConfigEdit(null);
-});
-
-$('btnClearProjectConfig').addEventListener('click', function(){
-  if(!confirm('确认清空全部项目配置数据？此操作不可恢复。\n\n建议先通过「导出CSV」备份数据。')) return;
-  localStorage.removeItem(PROJECT_CONFIG_KEY);
-  toast('项目配置数据已清空','ok');
-  renderProjectConfigList();
 });
 
 /* Import modal */
