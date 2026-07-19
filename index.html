@@ -53,6 +53,9 @@ tr:hover{background:#fafbff}
 tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
 #gameTable tbody tr{cursor:pointer}
 #gameTable{table-layout:fixed;width:100%;overflow:visible}
+#gameTable.collapsed td{max-height:3.2em;overflow:hidden;position:relative}
+#gameTable.collapsed .tags{max-height:3.2em;overflow:hidden}
+#gameTable.collapsed td .tags{-webkit-mask-image:linear-gradient(180deg,#000 80%,transparent);mask-image:linear-gradient(180deg,#000 80%,transparent)}
 .nw{white-space:nowrap}.mono{font-family:monospace;font-size:13px;color:var(--t2)}
 .tags{display:flex;flex-wrap:wrap;gap:4px}.tag{background:#eef2ff;color:var(--p);padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600}
 /* Modal */
@@ -251,6 +254,8 @@ tr.row-selected{background:#eef2ff!important;box-shadow:inset 3px 0 0 var(--p)}
       <button class="btn-sm pri" id="btnDownloadTemplate">📥 下载导入模板</button>
       <button class="btn-sm pri" id="btnImport">📂 导入</button>
       <button class="btn-sm pri" id="btnExport">📤 导出</button>
+      <button class="btn-sm" id="btnCollapseAll" style="border-color:#6366f1;color:#6366f1">📁 全收起</button>
+      <button class="btn-sm" id="btnExpandAll" style="border-color:#6366f1;color:#6366f1;display:none">📂 全展开</button>
       <button class="btn-sm pri" id="btnOfficerView">📋 福利官视图</button>
       <button class="btn-sm" id="btnLaunch" style="border-color:#8b5cf6;color:#7c3aed">📅 更新计划</button>
       <button class="btn-sm" id="btnVersion" style="border-color:#0891b2;color:#0891b2">🏷 版本管理</button>
@@ -2150,11 +2155,10 @@ function render(){
       + '</tr>';
   }
   tbody.innerHTML = html;
+  if(collapsedMode) $('gameTable').classList.add('collapsed');
   initColumnResize();
   updateSortIndicators();
 }
-
-/* ════════════════════ OFFICER VIEW (one row per officer) ════════════════════ */
 /* seq display helper: pure number → "项目X" */
 function fmtSeq(sq){
   if(!sq) return '';
@@ -2303,6 +2307,14 @@ $('btnOfficerView').addEventListener('click', function(){
     $('btnOfficerView').textContent = '📋 福利官视图';
     $('btnOfficerView').classList.remove('pri');
     $('btnOfficerView').classList.add('pri');
+    /* Show collapse/expand buttons in project view */
+    if(collapsedMode){
+      $('btnCollapseAll').style.display = 'none';
+      $('btnExpandAll').style.display = '';
+    } else {
+      $('btnCollapseAll').style.display = '';
+      $('btnExpandAll').style.display = 'none';
+    }
     // Restore project table header
     $('gameTableHead').innerHTML = '<th>游戏名称<div class="resize-handle"></div></th><th>版本<span class="sort-btn" data-col="version" onclick="event.stopPropagation();toggleSort(\'version\')">⇅</span><div class="resize-handle"></div></th><th>福利官昵称<div class="resize-handle"></div></th><th>福利官名称<div class="resize-handle"></div></th><th>二维码<div class="resize-handle"></div></th><th>获客链接<div class="resize-handle"></div></th><th>链接参数<div class="resize-handle"></div></th><th>上线日期<span class="sort-btn" data-col="launch" onclick="event.stopPropagation();toggleSort(\'launch\')">⇅</span><div class="resize-handle"></div></th><th>备注<div class="resize-handle"></div></th><th>操作<div class="resize-handle"></div></th>';
     render();
@@ -2310,6 +2322,9 @@ $('btnOfficerView').addEventListener('click', function(){
     currentView = 'officer';
     officerFilter = 'all';
     $('btnOfficerView').textContent = '📋 项目视图';
+    /* Hide collapse/expand buttons in officer view */
+    $('btnCollapseAll').style.display = 'none';
+    $('btnExpandAll').style.display = 'none';
     renderOfficerView();
   }
 });
@@ -2861,29 +2876,47 @@ $('btnDoImport').addEventListener('click', function(){
   render();
 });
 
+/* Collapse / Expand all rows */
+var collapsedMode = false;
+$('btnCollapseAll').addEventListener('click', function(){
+  collapsedMode = true;
+  var t = $('gameTable');
+  if(t) t.classList.add('collapsed');
+  $('btnCollapseAll').style.display = 'none';
+  $('btnExpandAll').style.display = '';
+});
+$('btnExpandAll').addEventListener('click', function(){
+  collapsedMode = false;
+  var t = $('gameTable');
+  if(t) t.classList.remove('collapsed');
+  $('btnCollapseAll').style.display = '';
+  $('btnExpandAll').style.display = 'none';
+});
+
 $('btnExport').addEventListener('click', function(){
   var games=getData();
   var offs=getOfficers();
   var versions=getVersions();
-  /* Export as CSV that can be directly re-imported */
-  /* Format: project_name/project_id | officer_nicks | qr_url | customer_link | link_params | notes | version */
-  var header = 'project_name/project_id\tOfficer_nicks\tqr_url\tcustomer_link\tlink_params\tnotes\tversion';
+  /* Export as CSV (comma-separated) that can be directly re-imported */
+  /* Format: project_name/project_id,officer_nicks,qr_url,customer_link,link_params,notes,version */
+  var header = 'project_name/project_id,officer_nicks,qr_url,customer_link,link_params,notes,version';
   var rows = games.map(function(g){
     var projKey = g.project_id || g.game_name || '';
+    /* Use Chinese comma to join nicks — import splits on [,，] so it still works */
     var nicks = (g.officer_ids||[]).map(function(oid){
       var o=offs.find(function(x){return x.id===oid});
       return o ? (o.nick||o.name||'') : '';
-    }).filter(Boolean).join(',');
+    }).filter(Boolean).join('，');
     var verName = '';
     if(g.version_id){
       var v = versions.find(function(x){return x.id===g.version_id});
       if(v) verName = v.name;
     }
-    /* Escape tabs/newlines in fields */
-    function escCsv(s){ return (s||'').replace(/\t/g,' ').replace(/\r?\n/g,' '); }
-    return [escCsv(projKey), escCsv(nicks), escCsv(g.qr_url), escCsv(g.customer_link), escCsv(g.link_params), escCsv(g.notes), escCsv(verName)].join('\t');
+    /* Replace English commas with Chinese commas to avoid breaking CSV split */
+    function escCsv(s){ return (s||'').replace(/,/g,'，').replace(/\t/g,' ').replace(/\r?\n/g,' '); }
+    return [escCsv(projKey), nicks, escCsv(g.qr_url), escCsv(g.customer_link), escCsv(g.link_params), escCsv(g.notes), escCsv(verName)].join(',');
   });
-  var csv = '\uFEFF' + header + '\n' + rows.join('\n') + '\n';
+  var csv = '\uFEFF' + header + '\r\n' + rows.join('\r\n') + '\r\n';
   var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
