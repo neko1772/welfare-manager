@@ -1473,6 +1473,27 @@ function getProjectConfigs(){
   try{ return JSON.parse(localStorage.getItem(PROJECT_CONFIG_KEY)) || [] }catch(e){ return [] }
 }
 function saveProjectConfigs(arr){ localStorage.setItem(PROJECT_CONFIG_KEY, JSON.stringify(arr)) }
+/* Get platform from project config by a game record (matches project_id or project_name) */
+function getPlatformByGame(g){
+  if(!g) return '';
+  var pcs = getProjectConfigs();
+  if(g.project_id){
+    var pc = pcs.find(function(p){ return (p.project_id||'')===g.project_id; });
+    if(pc && pc.platform) return pc.platform;
+  }
+  if(g.project_name){
+    var pc2 = pcs.find(function(p){ return (p.project_name||'')===g.project_name; });
+    if(pc2 && pc2.platform) return pc2.platform;
+  }
+  return '';
+}
+/* Platform color mapping (matches rest of app's color scheme) */
+function platformColor(plat){
+  if(plat==='39') return {bg:'#dbeafe', fg:'#1d4ed8'};
+  if(plat==='欢娱') return {bg:'#dcfce7', fg:'#15803d'};
+  if(plat==='七龙') return {bg:'#ede9fe', fg:'#7c3aed'};
+  return {bg:'#f1f5f9', fg:'#64748b'};
+}
 /* Migration: ensure every project config has an id (fixes old synced records) */
 function migrateProjectConfigs(){
   var pcs = getProjectConfigs();
@@ -2196,19 +2217,34 @@ function renderOfficerView(){
     });
   }
 
-  // --- Compute stats on ALL rows (before any filter) ---
+  // --- Apply keyword filter FIRST so stat cards follow the search ---
+  var searchRows = rows;
+  if(kw){
+    searchRows = rows.filter(function(r){
+      var projBlob = r.projects.map(function(p){
+        var pg = getGameById(p.game_id);
+        var plat = getPlatformByGame(pg);
+        var pid = pg ? (pg.project_id||'') : '';
+        return p.game_name+p.seq+plat+pid;
+      }).join(' ');
+      var blob = (r.nick+r.name+r.phone+r.device+projBlob).toLowerCase();
+      return blob.indexOf(kw)>=0;
+    });
+  }
+
+  // --- Compute stats on search-filtered rows (cards update with search) ---
   var arr39 = 0, arrHuanyu = 0, arrQilong = 0;
-  for(var ri=0;ri<rows.length;ri++){
-    var r = rows[ri];
+  for(var ri=0;ri<searchRows.length;ri++){
+    var r = searchRows[ri];
     if(r.name.indexOf('三九')>=0 || r.name.indexOf('39')>=0) arr39++;
     if(r.name.indexOf('欢娱')>=0) arrHuanyu++;
     if(r.name.indexOf('七龙')>=0) arrQilong++;
   }
   var qiyuCount = 0, noQiyuCount = 0;
-  for(var ri2=0;ri2<rows.length;ri2++){
-    if(rows[ri2].qiyu==='否') noQiyuCount++; else qiyuCount++;
+  for(var ri2=0;ri2<searchRows.length;ri2++){
+    if(searchRows[ri2].qiyu==='否') noQiyuCount++; else qiyuCount++;
   }
-  $('statTotal').textContent = rows.length;
+  $('statTotal').textContent = searchRows.length;
   $('statQiyu').textContent = qiyuCount;
   $('statNoQiyu').textContent = noQiyuCount;
   $('stat39').textContent = arr39;
@@ -2222,7 +2258,7 @@ function renderOfficerView(){
     if(cards[ci].getAttribute('data-filter') === officerFilter) cards[ci].classList.add('active');
   }
 
-  // --- Apply category filter ---
+  // --- Apply category filter to the table rows ---
   if(officerFilter === 'qiyu'){
     rows = rows.filter(function(r){ return r.qiyu !== '否'; });
   } else if(officerFilter === 'noqiyu'){
@@ -2235,14 +2271,6 @@ function renderOfficerView(){
     rows = rows.filter(function(r){ return r.name.indexOf('七龙')>=0; });
   }
 
-  // Filter by keyword
-  if(kw){
-    rows = rows.filter(function(r){
-      var projBlob = r.projects.map(function(p){return p.game_name+p.seq}).join(' ');
-      var blob = (r.nick+r.name+r.phone+r.device+projBlob).toLowerCase();
-      return blob.indexOf(kw)>=0;
-    });
-  }
   // Sort by nick
   rows.sort(function(a,b){ return a.nick.localeCompare(b.nick) });
   // Build count label with filter hint
@@ -2272,14 +2300,19 @@ function renderOfficerView(){
       var parts = [];
       for(var pi=0;pi<r.projects.length;pi++){
         var p = r.projects[pi];
-        var displayName = esc(p.game_name);
+        var pg = getGameById(p.game_id);
+        var projId = pg ? (pg.project_id||'') : '';
+        var plat = getPlatformByGame(pg);
+        var baseName = projId ? (projId + '-' + esc(p.game_name)) : esc(p.game_name);
+        var displayName = baseName;
         if(p.seq){
-          if(/^\d+$/.test(p.seq)) displayName = esc(p.game_name) + p.seq;
-          else displayName = esc(p.game_name) + '（' + esc(p.seq) + '）';
+          if(/^\d+$/.test(p.seq)) displayName = baseName + p.seq;
+          else displayName = baseName + '（' + esc(p.seq) + '）';
         }
-        parts.push('<div style="font-size:12px;line-height:1.7">'+displayName+'</div>');
+        var c = platformColor(plat);
+        parts.push('<span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600;background:'+c.bg+';color:'+c.fg+'">'+displayName+(plat?'【'+plat+'】':'')+'</span>');
       }
-      projHtml = '<div style="display:inline-block">'+parts.join('')+'</div>';
+      projHtml = '<div style="display:flex;flex-wrap:wrap;gap:4px">'+parts.join('')+'</div>';
     }
     var nameStyle = '';
     if(r.name.indexOf('三九')>=0 || r.name.indexOf('39')>=0) nameStyle = 'color:#3b82f6;font-weight:700';
@@ -2340,9 +2373,11 @@ function copyFullText(id){
   var seqs = g.officer_seqs||{};
   var sel = (g.officer_ids||[]).map(function(oid){ return offs.find(function(x){return x.id===oid}) }).filter(Boolean);
   var lines = [];
-  lines.push('项目名称：'+(g.game_name||''));
   if(g.project_id || g.project_name){
-    lines.push('项目：'+(g.project_id||'')+(g.project_name?' - '+g.project_name:''));
+    var pname = g.project_id ? (g.project_id + (g.project_name?' - '+g.project_name:'')) : (g.project_name||'');
+    var plat = getPlatformByGame(g);
+    if(plat) pname += '【'+plat+'】';
+    lines.push('项目：'+pname);
   }
   var verObj = g.version_id ? getVersionById(g.version_id) : null;
   if(verObj) lines.push('领取版本：'+verObj.name+(verObj.desc?('（'+verObj.desc+'）'):''));
