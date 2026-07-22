@@ -2258,6 +2258,9 @@ function renderOfficerView(){
     if(cards[ci].getAttribute('data-filter') === officerFilter) cards[ci].classList.add('active');
   }
 
+  // --- Apply keyword filter to the table rows as well (not just cards) ---
+  rows = searchRows;
+
   // --- Apply category filter to the table rows ---
   if(officerFilter === 'qiyu'){
     rows = rows.filter(function(r){ return r.qiyu !== '否'; });
